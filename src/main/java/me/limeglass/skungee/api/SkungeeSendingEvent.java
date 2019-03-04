@@ -1,37 +1,28 @@
-package me.limeglass.skungee.objects.events;
+package me.limeglass.skungee.api;
 
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
-import me.limeglass.skungee.objects.packets.BungeePacket;
+import me.limeglass.skungee.objects.packets.SkungeePacket;
 
 /**
  * 
- * Called when a BungeePacket is requesting a returned value.
+ * Called when sending a SkungeePacket to the Bungeecord.
  *
  */
-public class SkungeeReturningEvent extends Event implements Cancellable {
-
-	private static final HandlerList handlers = new HandlerList();
-	private final BungeePacket packet;
-	private boolean cancelled;
-	private Object object;
+public class SkungeeSendingEvent extends Event implements Cancellable {
 	
-	public SkungeeReturningEvent(BungeePacket packet, Object object) {
+	private static final HandlerList handlers = new HandlerList();
+	private final SkungeePacket packet;
+	private boolean cancelled;
+	
+	public SkungeeSendingEvent(SkungeePacket packet) {
 		this.packet = packet;
 	}
 	
-	public BungeePacket getPacket() {
+	public SkungeePacket getPacket() {
 		return packet;
-	}
-	
-	public Object getObject() {
-		return object;
-	}
-	
-	public void setObject(Object object) {
-		this.object = object;
 	}
 	
 	@Override
@@ -52,5 +43,5 @@ public class SkungeeReturningEvent extends Event implements Cancellable {
 	public static HandlerList getHandlerList() {
 		return handlers;
 	}
-	
+
 }

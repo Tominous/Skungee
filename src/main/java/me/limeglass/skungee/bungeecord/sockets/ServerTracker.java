@@ -54,7 +54,7 @@ public class ServerTracker {
 					}
 				}
 			}
-		}, 1, 1, TimeUnit.SECONDS);
+		}, 0, 1, TimeUnit.SECONDS);
 	}
 	
 	public void notResponding(ConnectedServer server) {

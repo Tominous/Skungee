@@ -1,4 +1,4 @@
-package me.limeglass.skungee.objects.events;
+package me.limeglass.skungee.api;
 
 import me.limeglass.skungee.objects.ConnectedServer;
 import me.limeglass.skungee.objects.packets.BungeePacket;
@@ -17,6 +17,7 @@ public class BungeeReturnedEvent extends Event {
 	
 	public BungeeReturnedEvent(BungeePacket packet, Object object, ConnectedServer server) {
 		this.server = server;
+		this.object = object;
 		this.packet = packet;
 	}
 	

@@ -1,4 +1,4 @@
-package me.limeglass.skungee.objects.events;
+package me.limeglass.skungee.api;
 
 import java.net.InetAddress;
 

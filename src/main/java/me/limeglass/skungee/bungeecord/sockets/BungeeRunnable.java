@@ -19,11 +19,11 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.config.Configuration;
 import me.limeglass.skungee.EncryptionUtil;
 import me.limeglass.skungee.UniversalSkungee;
+import me.limeglass.skungee.api.BungeeReceivedEvent;
+import me.limeglass.skungee.api.BungeeReturningEvent;
 import me.limeglass.skungee.bungeecord.Skungee;
 import me.limeglass.skungee.bungeecord.handlercontroller.SkungeeHandler;
 import me.limeglass.skungee.bungeecord.handlers.SkungeePacketHandler;
-import me.limeglass.skungee.objects.events.BungeeReceivedEvent;
-import me.limeglass.skungee.objects.events.BungeeReturningEvent;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 
 public class BungeeRunnable implements Runnable {
@@ -126,7 +126,6 @@ public class BungeeRunnable implements Runnable {
 					BungeeReturningEvent returning = new BungeeReturningEvent(packet, packetData, address);
 					ProxyServer.getInstance().getPluginManager().callEvent(returning);
 					packetData = returning.getObject();
-					Skungee.debugMessage("MADE IT HERE " + packetData.toString());
 					if (configuration.getBoolean("security.encryption.enabled", false)) {
 						byte[] serialized = encryption.serialize(packetData);
 						byte[] encrypted = encryption.encrypt(keyString, algorithm, serialized);

@@ -22,9 +22,9 @@ import org.bukkit.scheduler.BukkitScheduler;
 
 import me.limeglass.skungee.EncryptionUtil;
 import me.limeglass.skungee.UniversalSkungee;
+import me.limeglass.skungee.api.SkungeeReturnedEvent;
+import me.limeglass.skungee.api.SkungeeSendingEvent;
 import me.limeglass.skungee.objects.SkungeePlayer;
-import me.limeglass.skungee.objects.events.SkungeeReturnedEvent;
-import me.limeglass.skungee.objects.events.SkungeeSendingEvent;
 import me.limeglass.skungee.objects.packets.HandshakePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;

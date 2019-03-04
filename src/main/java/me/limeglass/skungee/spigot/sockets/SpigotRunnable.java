@@ -22,8 +22,8 @@ import org.eclipse.jdt.annotation.Nullable;
 
 import me.limeglass.skungee.EncryptionUtil;
 import me.limeglass.skungee.UniversalSkungee;
-import me.limeglass.skungee.objects.events.SkungeeReceivedEvent;
-import me.limeglass.skungee.objects.events.SkungeeReturningEvent;
+import me.limeglass.skungee.api.SkungeeReceivedEvent;
+import me.limeglass.skungee.api.SkungeeReturningEvent;
 import me.limeglass.skungee.objects.packets.BungeePacket;
 import me.limeglass.skungee.spigot.Skungee;
 

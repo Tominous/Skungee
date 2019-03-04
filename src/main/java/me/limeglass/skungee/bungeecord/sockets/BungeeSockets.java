@@ -15,14 +15,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import me.limeglass.skungee.objects.ConnectedServer;
-import me.limeglass.skungee.objects.events.BungeeReturnedEvent;
-import me.limeglass.skungee.objects.events.BungeeSendingEvent;
 import me.limeglass.skungee.objects.packets.BungeePacket;
 import me.limeglass.skungee.objects.packets.BungeePacketType;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.config.Configuration;
 import me.limeglass.skungee.EncryptionUtil;
 import me.limeglass.skungee.UniversalSkungee;
+import me.limeglass.skungee.api.BungeeReturnedEvent;
+import me.limeglass.skungee.api.BungeeSendingEvent;
 import me.limeglass.skungee.bungeecord.Skungee;
 
 public class BungeeSockets {

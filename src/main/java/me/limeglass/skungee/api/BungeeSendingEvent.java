@@ -1,4 +1,4 @@
-package me.limeglass.skungee.objects.events;
+package me.limeglass.skungee.api;
 
 import me.limeglass.skungee.objects.ConnectedServer;
 import me.limeglass.skungee.objects.packets.BungeePacket;

@@ -1,4 +1,4 @@
-package me.limeglass.skungee.objects.events;
+package me.limeglass.skungee.api;
 
 import java.net.InetAddress;
 
@@ -20,6 +20,7 @@ public class BungeeReturningEvent extends Event implements Cancellable {
 	
 	public BungeeReturningEvent(SkungeePacket packet, Object object, InetAddress address) {
 		this.address = address;
+		this.object = object;
 		this.packet = packet;
 	}
 	
