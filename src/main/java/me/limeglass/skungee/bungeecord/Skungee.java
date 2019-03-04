@@ -23,7 +23,9 @@ import me.limeglass.skungee.bungeecord.protocol.channel.ChannelListener;
 import me.limeglass.skungee.bungeecord.serverinstances.Premium;
 import me.limeglass.skungee.bungeecord.sockets.BungeeRunnable;
 import me.limeglass.skungee.bungeecord.sockets.ServerInstancesSockets;
+import me.limeglass.skungee.bungeecord.sockets.ServerTracker;
 import me.limeglass.skungee.bungeecord.utils.BungeeReflectionUtil;
+import me.limeglass.skungee.bungeecord.variables.SkungeeStorage;
 import me.limeglass.skungee.bungeecord.variables.VariableManager;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
@@ -42,34 +44,47 @@ public class Skungee extends Plugin {
 	private final static String nameplate = "[Skungee] ";
 	private static EncryptionUtil encryption;
 	private static BungecordMetrics metrics;
+	private VariableManager variableManager;
 	private ServerSocket serverSocket;
 	private static Skungee instance;
+	private ServerTracker tracker;
 	private File SCRIPTS_FOLDER;
+	private SkungeeHaste haste;
 	
 	public void onEnable(){
 		instance = this;
-		if (!getDataFolder().exists()) getDataFolder().mkdir();
+		if (!getDataFolder().exists())
+			getDataFolder().mkdir();
 		UniversalSkungee.setBungeecord(true);
 		SCRIPTS_FOLDER = new File(getDataFolder(), File.separator + "scripts");
-		if (!SCRIPTS_FOLDER.exists()) SCRIPTS_FOLDER.mkdir();
+		if (!SCRIPTS_FOLDER.exists())
+			SCRIPTS_FOLDER.mkdir();
 		loadConfiguration();
+		this.tracker = new ServerTracker(this);
+		this.variableManager = new VariableManager(this);
 		Premium.check();
-		encryption = new EncryptionUtil(this, false);
+		encryption = new EncryptionUtil(this);
 		encryption.hashFile();
 		//load handlers
 		Set<Class<?>> classes = BungeeReflectionUtil.getClasses(Skungee.getInstance(), "me.limeglass.skungee.bungeecord.handlers", "me.limeglass.skungee.bungeecord.protocol.handlers");
 		initializeHandlers(classes.toArray(new Class[classes.size()]));
 		metrics = new BungecordMetrics(this);
 		metrics();
-		if (getConfig().getBoolean("Events", false)) getProxy().getPluginManager().registerListener(this, new EventListener());
-		if (getConfig().getBoolean("Packets.Enabled", true)) getProxy().getPluginManager().registerListener(this, new ChannelListener());
-		VariableManager.setup();
+		if (getConfig().getBoolean("Events", false))
+			getProxy().getPluginManager().registerListener(this, new EventListener(this));
+		if (getConfig().getBoolean("Packets.Enabled", true))
+			getProxy().getPluginManager().registerListener(this, new ChannelListener());
+		this.haste = new SkungeeHaste(instance);
 		connect();
-		if (!getConfig().getBoolean("DisableRegisteredInfo", false)) consoleMessage("has been enabled!");
+		if (!getConfig().getBoolean("DisableRegisteredInfo", false))
+			consoleMessage("Skungee has been enabled!");
 	}
 	
 	public void onDisable() {
 		ServerInstancesSockets.shutdown();
+		SkungeeStorage storage = variableManager.getMainStorage();
+		if (storage != null)
+			storage.shutdown();
 	}
 	
 	@SafeVarargs
@@ -81,7 +96,7 @@ public class Skungee extends Plugin {
 		metrics.addCustomChart(new BungecordMetrics.MultiLineChart("variables_and_scripts") {
 			@Override
 			public HashMap<String, Integer> getValues(HashMap<String, Integer> map) {
-				map.put("amount of variables", VariableManager.getMainStorage().getSize());
+				map.put("amount of variables", variableManager.getMainStorage().getSize());
 				map.put("amount of global scripts", SCRIPTS_FOLDER.listFiles().length);
 				return map;
 			}
@@ -95,7 +110,7 @@ public class Skungee extends Plugin {
 		metrics.addCustomChart(new BungecordMetrics.SimplePie("storage_type") {
 			@Override
 			public String getValue() {
-				return VariableManager.getMainStorage().getNames()[0];
+				return variableManager.getMainStorage().getNames()[0];
 			}
 		});
 		metrics.addCustomChart(new BungecordMetrics.SimplePie("using_serverinstnaces") {
@@ -110,6 +125,11 @@ public class Skungee extends Plugin {
 				return Skungee.getConfiguration("config").getBoolean("Packets.Enabled") + "";
 			}
 		});
+	}
+	
+	public String postSkungeeHaste() {
+		String content = haste.createHaste();
+		return haste.postHaste(content);
 	}
 	
 	private void loadConfiguration() {
@@ -206,7 +226,7 @@ public class Skungee extends Plugin {
 		}
 		infoMessage();
 		infoMessage("Information:");
-		infoMessage("  Skungee: " + getConfig().getString("version"));
+		infoMessage("  Skungee: " + instance.getConfig().getString("version"));
 		infoMessage("  Bungee: " + ProxyServer.getInstance().getVersion());
 		infoMessage("  Game version: " + ProxyServer.getInstance().getGameVersion());
 		infoMessage("  Protocol version: " + ProxyServer.getInstance().getProtocolVersion());
@@ -220,11 +240,19 @@ public class Skungee extends Plugin {
 		infoMessage();
 	}
 	
+	public VariableManager getVariableManager() {
+		return variableManager;
+	}
+	
+	public ServerTracker getServerTracker() {
+		return tracker;
+	}
+	
 	public static Skungee getInstance() {
 		return instance;
 	}
 	
-	public static Configuration getConfig() {
+	public Configuration getConfig() {
 		return getConfiguration("config");
 	}
 	
@@ -257,7 +285,8 @@ public class Skungee extends Plugin {
 	}
 	
 	public static void debugMessage(String text) {
-		if (getConfig().getBoolean("debug")) consoleMessage("&b" + text);
+		if (instance.getConfig().getBoolean("debug"))
+			consoleMessage("&b" + text);
 	}
 	
 	//Grabs a Configuration of a defined name. The name can't contain .yml in it.
@@ -278,14 +307,18 @@ public class Skungee extends Plugin {
 	}
 
 	public static void consoleMessage(@Nullable String... messages) {
-		if (getConfig().getBoolean("DisableConsoleMessages", false)) return;
+		if (instance.getConfig().getBoolean("DisableConsoleMessages", false))
+			return;
 		if (messages != null && messages.length > 0) {
 			for (String text : messages) {
-				if (getConfig().getBoolean("DisableConsoleColour", false)) infoMessage(ChatColor.stripColor(cc(text)));
-				else ProxyServer.getInstance().getLogger().info(cc(prefix + text));
+				if (instance.getConfig().getBoolean("DisableConsoleColour", false))
+					infoMessage(ChatColor.stripColor(cc(text)));
+				else
+					instance.getLogger().info(cc(prefix + text));
 			}
 		} else {
-			ProxyServer.getInstance().getLogger().info("");
+			instance.getLogger().info("");
 		}
 	}
+
 }

@@ -8,49 +8,67 @@ import java.util.jar.JarFile;
 
 import me.limeglass.skungee.bungeecord.Skungee;
 import me.limeglass.skungee.spigot.utils.ReflectionUtil;
-import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.config.Configuration;
 
 public class VariableManager {
 	
-	private final static Set<SkungeeStorage> storages = new HashSet<SkungeeStorage>();
-	private static SkungeeStorage main;
+	private final Set<SkungeeStorage> storages = new HashSet<>();
+	private final Configuration configuration;
+	private SkungeeStorage main;
 	
-	public static void registerStorage(SkungeeStorage storage) {
-		storages.add(storage);
-		Skungee.debugMessage("Registered storage type: " + storage.getNames()[0]);
-	}
-	
-	public static void setup() {
-		if (Skungee.getConfig().getBoolean("NetworkVariables.Backups.Enabled", false)) {
-			Long time = Skungee.getConfig().getLong("NetworkVariables.Backups.IntervalTime", 120);
-			Boolean messages = Skungee.getConfig().getBoolean("NetworkVariables.Backups.ConsoleMessage", false);
-			ProxyServer.getInstance().getScheduler().schedule(Skungee.getInstance(), new VariableBackup(messages), time, time, TimeUnit.MINUTES);
+	@SuppressWarnings("unchecked")
+	public VariableManager(Skungee instance) {
+		this.configuration = instance.getConfig();
+		if (configuration.getBoolean("NetworkVariables.Backups.Enabled", false)) {
+			long time = configuration.getLong("NetworkVariables.Backups.IntervalTime", 120);
+			boolean messages = configuration.getBoolean("NetworkVariables.Backups.ConsoleMessage", false);
+			instance.getProxy().getScheduler().schedule(instance, new VariableBackup(instance, messages), time, time, TimeUnit.MINUTES);
 		}
 		try {
-			ReflectionUtil.getClasses(new JarFile(Skungee.getInstance().getFile()), "me.limeglass.skungee.bungeecord.variables");
+			Set<Class<?>> classes = ReflectionUtil.getClasses(new JarFile(instance.getFile()), "me.limeglass.skungee.bungeecord.storages");
+			classes.parallelStream()
+					.filter(clazz -> SkungeeStorage.class.isAssignableFrom(clazz))
+					.map(clazz -> (Class<? extends SkungeeStorage>)clazz)
+					.map(clazz -> {
+						try {
+							return clazz.newInstance();
+						} catch (InstantiationException | IllegalAccessException | IllegalArgumentException e) {
+							Skungee.exception(e, "Class " + clazz.getName() + " canèt be initalized.");
+						}
+						return null;
+					})
+					.filter(constructor -> constructor != null)
+					.forEach(storage -> registerStorage(storage));
 		} catch (IOException e) {
 			Skungee.exception(e, "Failed to find any classes for Skungee Storage types");
 		}
-		Boolean initialize = false;
+		boolean initialized = false;
+		String type = configuration.getString("NetworkVariables.StorageType", "CSV");
 		for (SkungeeStorage storage : storages) {
 			for (String name : storage.getNames()) {
-				if (Skungee.getConfig().getString("NetworkVariables.StorageType", "CSV").equalsIgnoreCase(name)) {
-					initialize = storage.initialize();
+				if (type.equalsIgnoreCase(name)) {
+					initialized = storage.initialize();
 					main = storage;
 				}
 			}
 		}
-		if (!initialize) {
-			Skungee.consoleMessage("Failed to initialize storage type: " + Skungee.getConfig().getString("NetworkVariables.StorageType"));
+		if (!initialized) {
+			Skungee.consoleMessage("Failed to initialize storage type: " + type);
 			return;
 		}
 	}
 	
-	public static SkungeeStorage getMainStorage() {
+	public void registerStorage(SkungeeStorage storage) {
+		storages.add(storage);
+		Skungee.debugMessage("Registered storage type: " + storage.getNames()[0]);
+	}
+	
+	public SkungeeStorage getMainStorage() {
 		return main;
 	}
 	
-	public static void backup() {
+	public void backup() {
 		main.backup();
 	}
+
 }

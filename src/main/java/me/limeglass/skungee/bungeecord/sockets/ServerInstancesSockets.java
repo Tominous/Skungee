@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Base64;
 
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.config.Configuration;
 import me.limeglass.skungee.bungeecord.Skungee;
 import me.limeglass.skungee.objects.packets.ServerInstancesPacket;
 
@@ -30,7 +31,7 @@ public class ServerInstancesSockets {
 	}
 
 	private static Socket getBootstap() {
-		for (int i = 0; i < Skungee.getConfig().getInt("Recievers.allowedTrys", 5); i++) {
+		for (int i = 0; i < Skungee.getInstance().getConfig().getInt("Recievers.allowedTrys", 5); i++) {
 			try {
 				return new Socket(InetAddress.getLocalHost(), port);
 			} catch (IOException e) {}
@@ -64,11 +65,12 @@ public class ServerInstancesSockets {
 				checking = false;
 			}
 			Skungee.debugMessage("Sending " + getPacketDebug(packet) + " to the ServerInstances Bootstrap.");
+			Configuration configuration = Skungee.getInstance().getConfig();
 			//Security setup
-			if (Skungee.getConfig().getBoolean("security.password.enabled", false)) {
-				byte[] password = Skungee.getEncrypter().serialize(Skungee.getConfig().getString("security.password.password"));
-				if (Skungee.getConfig().getBoolean("security.password.hash", true)) {
-					if (Skungee.getConfig().getBoolean("security.password.hashFile", false) && Skungee.getEncrypter().isFileHashed()) {
+			if (configuration.getBoolean("security.password.enabled", false)) {
+				byte[] password = Skungee.getEncrypter().serialize(configuration.getString("security.password.password"));
+				if (configuration.getBoolean("security.password.hash", true)) {
+					if (configuration.getBoolean("security.password.hashFile", false) && Skungee.getEncrypter().isFileHashed()) {
 						password = Skungee.getEncrypter().getHashFromFile();
 					} else {
 						password = Skungee.getEncrypter().hash();
@@ -77,7 +79,7 @@ public class ServerInstancesSockets {
 				if (password != null) packet.setPassword(password);
 			}
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(bootstrap.getOutputStream());
-			if (Skungee.getConfig().getBoolean("security.encryption.enabled", false)) {
+			if (configuration.getBoolean("security.encryption.enabled", false)) {
 				byte[] serialized = Skungee.getEncrypter().serialize(packet);
 				objectOutputStream.writeObject(Base64.getEncoder().encode(serialized));
 			} else {
@@ -86,7 +88,7 @@ public class ServerInstancesSockets {
 			//NOTE: There is a bug where if a ServerInstances server stays in the config.yml of Bungeecord this can error, strange stuff.
 			ObjectInputStream objectInputStream = new ObjectInputStream(bootstrap.getInputStream());
 			if (packet.isReturnable()) {
-				if (Skungee.getConfig().getBoolean("security.encryption.enabled", false)) {
+				if (configuration.getBoolean("security.encryption.enabled", false)) {
 					byte[] decoded = Base64.getDecoder().decode((byte[]) objectInputStream.readObject());
 					return Skungee.getEncrypter().deserialize(decoded);
 				} else {

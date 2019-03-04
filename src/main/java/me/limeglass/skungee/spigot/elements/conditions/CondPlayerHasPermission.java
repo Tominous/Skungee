@@ -8,7 +8,6 @@ import me.limeglass.skungee.objects.SkungeePlayer;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.lang.SkungeeCondition;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.Utils;
 import me.limeglass.skungee.spigot.utils.annotations.Patterns;
 
@@ -20,6 +19,7 @@ public class CondPlayerHasPermission extends SkungeeCondition {
 	public boolean check(Event event) {
 		if (areNull(event)) return false;
 		SkungeePlayer[] players = Utils.toSkungeePlayers(expressions.get(0).getSingle(event));
-		return ((Boolean) Sockets.send(new SkungeePacket(true, SkungeePacketType.PLAYERPERMISSIONS, expressions.get(1).getAll(event), players))) ? isNegated() : !isNegated();
+		return (boolean) sockets.send(new SkungeePacket(true, SkungeePacketType.PLAYERPERMISSIONS, expressions.get(1).getAll(event), players)) ? isNegated() : !isNegated();
 	}
+
 }

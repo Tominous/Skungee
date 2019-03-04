@@ -37,7 +37,8 @@ public class ProtocolLookHandler extends ProtocolPacketHandler {
 		ByteBuf buf = packet.getByteBuf();
 		try {
 			player.setYaw(buf.readFloat());
-			player.setPitch(buf.readFloat());
+			if (buf.isReadable())
+				player.setPitch(buf.readFloat());
 		//Catching prevents the connecting player from crashing.
 		} catch (Exception e) {
 			if (Skungee.getConfiguration("config").getBoolean("debug", false))

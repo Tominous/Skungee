@@ -99,7 +99,7 @@ public class SpigotPacketHandler {
 				}
 				break;
 			case GLOBALSCRIPTS:
-				if (Skungee.isSkriptPresent()) {
+				if (Skungee.getInstance().isSkriptPresent()) {
 					File scriptsFolder = new File(Skript.getInstance().getDataFolder().getAbsolutePath() + File.separator + Skript.SCRIPTSFOLDER);
 					Set<File> scripts = getFiles(scriptsFolder, new FilenameFilter() {
 						@Override
@@ -177,7 +177,7 @@ public class SpigotPacketHandler {
 				}
 				break;
 			case UPDATEVARIABLES:
-				if (Skungee.isSkriptPresent()) {
+				if (Skungee.getInstance().isSkriptPresent()) {
 					Object objectName = packet.getObject();
 					Object objectValues = packet.getSetObject();
 					if (objectName == null || objectValues == null) return null;

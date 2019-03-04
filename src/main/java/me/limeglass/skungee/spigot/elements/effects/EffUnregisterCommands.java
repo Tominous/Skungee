@@ -5,7 +5,6 @@ import ch.njol.skript.doc.Name;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.lang.SkungeeEffect;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.annotations.Patterns;
 
 import org.bukkit.event.Event;
@@ -18,6 +17,7 @@ public class EffUnregisterCommands extends SkungeeEffect {
 	@Override
 	protected void execute(Event event) {
 		if (areNull(event)) return;
-		Sockets.send(new SkungeePacket(false, SkungeePacketType.UNREGISTERCOMMANDS, expressions.getAll(event, String.class)));
+		sockets.send(new SkungeePacket(false, SkungeePacketType.UNREGISTERCOMMANDS, expressions.getAll(event, String.class)));
 	}
+
 }

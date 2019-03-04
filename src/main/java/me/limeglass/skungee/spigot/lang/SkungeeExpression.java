@@ -17,6 +17,7 @@ import ch.njol.util.Kleenean;
 import ch.njol.util.coll.CollectionUtils;
 import me.limeglass.skungee.spigot.Skungee;
 import me.limeglass.skungee.spigot.Syntax;
+import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.Utils;
 import me.limeglass.skungee.spigot.utils.annotations.AllChangers;
 import me.limeglass.skungee.spigot.utils.annotations.Changers;
@@ -28,11 +29,18 @@ import me.limeglass.skungee.spigot.utils.annotations.Single;
 
 public abstract class SkungeeExpression<T> extends SimpleExpression<T> implements DataChecker {
 
-	private List<Object> values = new ArrayList<Object>();
+	private final List<Object> values = new ArrayList<>();
 	protected ExpressionData expressions;
 	private Class<T> expressionClass;
+	protected final Skungee instance;
+	protected final Sockets sockets;
 	protected ParseResult parser;
 	protected int patternMark;
+	
+	public SkungeeExpression() {
+		this.instance = Skungee.getInstance();
+		this.sockets = instance.getSockets();
+	}
 	
 	@SuppressWarnings("unchecked")
 	@Override
@@ -108,4 +116,5 @@ public abstract class SkungeeExpression<T> extends SimpleExpression<T> implement
 		}
 		return false;
 	}
+
 }

@@ -25,7 +25,6 @@ import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.Skungee;
 import me.limeglass.skungee.spigot.lang.SkungeeEffect;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.annotations.Patterns;
 
 @Name("Network variable Async")
@@ -82,9 +81,10 @@ public class EffAsyncNetworkVariable extends SkungeeEffect {
 	
 	@Override
 	protected TriggerItem walk(Event event) {
-		Bukkit.getScheduler().runTaskAsynchronously(Skungee.getInstance(), () -> {
-			Object object = Sockets.send(new SkungeePacket(true, SkungeePacketType.NETWORKVARIABLE, variableString.toString(event)));
-			if (object == null) return;
+		instance.getServer().getScheduler().runTaskAsynchronously(instance, () -> {
+			Object object = sockets.send(new SkungeePacket(true, SkungeePacketType.NETWORKVARIABLE, variableString.toString(event)));
+			if (object == null)
+				return;
 			if (!(object instanceof Value[])) {
 				Skungee.consoleMessage("A network variable under the index of \"" + variableString.toString(event) + "\" returned a value that could not be handled.");
 				Skungee.consoleMessage("This could be due to an old format, in that case please reset this value or reset it.");
@@ -109,4 +109,5 @@ public class EffAsyncNetworkVariable extends SkungeeEffect {
 	
 	@Override
 	protected void execute(Event event) {}
+
 }

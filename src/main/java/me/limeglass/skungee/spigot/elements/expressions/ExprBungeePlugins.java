@@ -9,7 +9,6 @@ import ch.njol.skript.lang.ExpressionType;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.lang.SkungeeExpression;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.annotations.ExpressionProperty;
 import me.limeglass.skungee.spigot.utils.annotations.Patterns;
 
@@ -22,7 +21,8 @@ public class ExprBungeePlugins extends SkungeeExpression<String> {
 	@Override
 	protected String[] get(Event event) {
 		@SuppressWarnings("unchecked")
-		Collection<String> plugins = (Collection<String>) Sockets.send(new SkungeePacket(true, SkungeePacketType.PLUGINS));
+		Collection<String> plugins = (Collection<String>) sockets.send(new SkungeePacket(true, SkungeePacketType.PLUGINS));
 		return (plugins != null) ? plugins.toArray(new String[plugins.size()]) : null;
 	}
+
 }

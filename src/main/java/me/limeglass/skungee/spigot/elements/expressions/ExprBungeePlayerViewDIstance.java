@@ -8,7 +8,6 @@ import ch.njol.skript.doc.Name;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.lang.SkungeePropertyExpression;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.Utils;
 import me.limeglass.skungee.spigot.utils.annotations.AllChangers;
 import me.limeglass.skungee.spigot.utils.annotations.Properties;
@@ -23,9 +22,11 @@ public class ExprBungeePlayerViewDIstance extends SkungeePropertyExpression<Obje
 
 	@Override
 	protected Number[] get(Event event, Object[] skungeePlayers) {
-		if (isNull(event)) return null;
+		if (isNull(event))
+			return null;
 		@SuppressWarnings("unchecked")
-		Set<Number> distances = (Set<Number>) Sockets.send(new SkungeePacket(true, SkungeePacketType.PLAYERVIEWDISTANCE, Utils.toSkungeePlayers(skungeePlayers)));
+		Set<Number> distances = (Set<Number>) sockets.send(new SkungeePacket(true, SkungeePacketType.PLAYERVIEWDISTANCE, Utils.toSkungeePlayers(skungeePlayers)));
 		return (distances != null) ? distances.toArray(new Number[distances.size()]) : null;
 	}
+
 }

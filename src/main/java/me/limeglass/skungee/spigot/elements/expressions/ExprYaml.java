@@ -11,11 +11,9 @@ import ch.njol.util.Kleenean;
 import ch.njol.util.coll.CollectionUtils;
 import me.limeglass.skungee.objects.SkungeeEnums.SkriptChangeMode;
 import me.limeglass.skungee.objects.SkungeeEnums.State;
-import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.objects.packets.SkungeeYamlPacket;
 import me.limeglass.skungee.spigot.lang.ExpressionData;
 import me.limeglass.skungee.spigot.lang.SkungeeExpression;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.Utils;
 import me.limeglass.skungee.spigot.utils.annotations.Patterns;
 
@@ -49,7 +47,7 @@ public class ExprYaml extends SkungeeExpression<Object> {
 	@Override
 	protected Object[] get(Event event) {
 		if (areNull(event)) return null;
-		Object[] value = (Object[]) Sockets.send(new SkungeeYamlPacket(SkungeePacketType.YAML, expressions.getSingle(event, String.class, 0), expressions.getSingle(event, String.class, 1), state));
+		Object[] value = (Object[]) sockets.send(new SkungeeYamlPacket(expressions.getSingle(event, String.class, 0), expressions.getSingle(event, String.class, 1), state));
 		if (value == null) return null;
 		return value;
 	}
@@ -71,7 +69,7 @@ public class ExprYaml extends SkungeeExpression<Object> {
 	public void change(Event event, Object[] delta, ChangeMode mode) {
 		SkriptChangeMode changer = Utils.getEnum(SkriptChangeMode.class, mode.toString());
 		if (changer == null || delta == null || areNull(event)) return;
-		Sockets.send(new SkungeeYamlPacket(SkungeePacketType.YAML, expressions.getSingle(event, String.class, 0), expressions.getSingle(event, String.class, 1), delta,  state, changer));
+		sockets.send(new SkungeeYamlPacket(expressions.getSingle(event, String.class, 0), expressions.getSingle(event, String.class, 1), delta,  state, changer));
 	}
 
 }

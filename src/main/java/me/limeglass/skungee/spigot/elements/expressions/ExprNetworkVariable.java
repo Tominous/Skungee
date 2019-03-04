@@ -25,7 +25,6 @@ import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.Skungee;
 import me.limeglass.skungee.spigot.lang.SkungeeExpression;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.Utils;
 import me.limeglass.skungee.spigot.utils.annotations.Patterns;
 
@@ -81,7 +80,7 @@ public class ExprNetworkVariable extends SkungeeExpression<Object> {
 	@Override
 	@Nullable
 	protected Object[] get(Event event) {
-		Object variable = Sockets.send(new SkungeePacket(true, SkungeePacketType.NETWORKVARIABLE, variableString.toString(event)));
+		Object variable = sockets.send(new SkungeePacket(true, SkungeePacketType.NETWORKVARIABLE, variableString.toString(event)));
 		if (variable == null) return null;
 		if (!(variable instanceof Value[])) {
 			Skungee.consoleMessage("A network variable under the index of \"" + variableString.toString(event) + "\" returned a value that could not be handled.");
@@ -121,6 +120,7 @@ public class ExprNetworkVariable extends SkungeeExpression<Object> {
 			}
 		}
 		SkungeeVariable variable = new SkungeeVariable(variableString.toString(event), values);
-		Sockets.send(new SkungeePacket(true, SkungeePacketType.NETWORKVARIABLE, variable, changer));
+		sockets.send(new SkungeePacket(true, SkungeePacketType.NETWORKVARIABLE, variable, changer));
 	}
+
 }

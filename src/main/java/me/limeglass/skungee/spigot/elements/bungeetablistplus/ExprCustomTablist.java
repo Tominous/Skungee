@@ -8,7 +8,6 @@ import codecrafter47.bungeetablistplus.api.bungee.CustomTablist;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.lang.SkungeeExpression;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.annotations.Disabled;
 import me.limeglass.skungee.spigot.utils.annotations.Patterns;
 import me.limeglass.skungee.spigot.utils.annotations.RegisterType;
@@ -25,7 +24,9 @@ public class ExprCustomTablist extends SkungeeExpression<CustomTablist> {
 	@Override
 	protected CustomTablist[] get(Event event) {
 		int size = 80;
-		if (!areNull(event)) size = expressions.getInt(event, 0);
-		return (CustomTablist[]) Sockets.send(new SkungeePacket(true, SkungeePacketType.BTLP_TABLIST, size));
+		if (!areNull(event))
+			size = expressions.getInt(event, 0);
+		return (CustomTablist[]) sockets.send(new SkungeePacket(true, SkungeePacketType.BTLP_TABLIST, size));
 	}
+
 }

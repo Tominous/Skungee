@@ -20,7 +20,7 @@ import me.limeglass.skungee.spigot.utils.annotations.*;
 public class Register {
 	
 	static {
-		if (Skungee.isSkriptPresent()) {
+		if (Skungee.getInstance().isSkriptPresent()) {
 			run : for (Class clazz : ReflectionUtil.getClasses(Skungee.getInstance(), Skungee.getInstance().getPackageName())) {
 				if (clazz.getName().contains("serverinstances") && !Skungee.getInstance().getConfiguration("config").getBoolean("ServerInstances", false)) continue run;
 				if (!clazz.isAnnotationPresent(Disabled.class)) {

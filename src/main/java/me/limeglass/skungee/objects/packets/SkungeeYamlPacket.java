@@ -10,15 +10,15 @@ public class SkungeeYamlPacket extends SkungeePacket {
 	private final State state;
 	private Object[] delta;
 	
-	public SkungeeYamlPacket(SkungeePacketType type, String node, String path, State state) {
-		super(true, type, node, path);
+	public SkungeeYamlPacket(String node, String path, State state) {
+		super(true, SkungeePacketType.YAML, node, path);
 		this.state = state;
 		this.node = node;
 		this.path = path;
 	}
 	
-	public SkungeeYamlPacket(SkungeePacketType type, String node, String path, Object[] delta, State state, SkriptChangeMode changeMode) {
-		super(true, type, node, delta, changeMode);
+	public SkungeeYamlPacket(String node, String path, Object[] delta, State state, SkriptChangeMode changeMode) {
+		super(true, SkungeePacketType.YAML, node, delta, changeMode);
 		this.delta = delta;
 		this.state = state;
 		this.node = node;
@@ -44,4 +44,5 @@ public class SkungeeYamlPacket extends SkungeePacket {
 	public boolean isUnset() {
 		return node == null || path == null || state == null;
 	}
+
 }

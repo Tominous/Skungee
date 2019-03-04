@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import com.google.common.collect.Lists;
 
 import me.limeglass.skungee.bungeecord.handlercontroller.SkungeeBungeeHandler;
-import me.limeglass.skungee.bungeecord.variables.VariableManager;
 import me.limeglass.skungee.objects.SkungeeEnums.SkriptChangeMode;
 import me.limeglass.skungee.objects.SkungeeVariable;
 import me.limeglass.skungee.objects.SkungeeVariable.Value;
@@ -30,30 +29,30 @@ public class NetworkVariableHandler extends SkungeeBungeeHandler {
 			SkriptChangeMode mode = packet.getChangeMode();
 			if (mode != null) {
 				ArrayList<Value> modify = new ArrayList<Value>();
-				Value[] data = VariableManager.getMainStorage().get(variableString);
+				Value[] data = storage.get(variableString);
 				if (data != null) modify = Lists.newArrayList(data);
 				if (values == null && !(mode == SkriptChangeMode.RESET || mode == SkriptChangeMode.DELETE)) return null;
 				switch (mode) {
 					case ADD:
-						VariableManager.getMainStorage().delete(variableString);
+						storage.delete(variableString);
 						for (Value value : values) modify.add(value);
-						VariableManager.getMainStorage().set(variableString, modify.toArray(new Value[modify.size()]));
+						storage.set(variableString, modify.toArray(new Value[modify.size()]));
 						break;
 					case REMOVE_ALL:
 					case REMOVE:
-						VariableManager.getMainStorage().remove(values, variableString);
+						storage.remove(values, variableString);
 						break;
 					case DELETE:
 					case RESET:
-						VariableManager.getMainStorage().delete(variableString);
+						storage.delete(variableString);
 						break;
 					case SET:
-						VariableManager.getMainStorage().set(variableString, values);
+						storage.set(variableString, values);
 						break;
 				}
 			}
 		} else if (object instanceof String && packet.getChangeMode() == null) {
-			return VariableManager.getMainStorage().get((String)object);
+			return storage.get((String)object);
 		}
 		return null;
 	}

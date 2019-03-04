@@ -4,15 +4,19 @@ import me.limeglass.skungee.bungeecord.Skungee;
 
 public class VariableBackup implements Runnable {
 
-	Boolean messages;
+	private final VariableManager variableManager;
+	private final boolean messages;
 	
-	public VariableBackup(boolean messages) {
+	public VariableBackup(Skungee instance, boolean messages) {
+		this.variableManager = instance.getVariableManager();
 		this.messages = messages;
 	}
 	
 	@Override
 	public void run() {
-		if (messages) Skungee.consoleMessage("Variables have been saved!");
-		VariableManager.backup();
+		if (messages)
+			Skungee.consoleMessage("Variables have been saved!");
+		variableManager.backup();
 	}
+
 }

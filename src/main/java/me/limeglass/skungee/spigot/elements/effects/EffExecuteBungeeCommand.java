@@ -6,7 +6,6 @@ import ch.njol.skript.util.Timespan;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.lang.SkungeeEffect;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.annotations.Patterns;
 
 import org.bukkit.event.Event;
@@ -22,6 +21,7 @@ public class EffExecuteBungeeCommand extends SkungeeEffect {
 	protected void execute(Event event) {
 		long delay = 0;
 		if (!isNull(event, Timespan.class) && expressions.getSingle(event, Timespan.class).getTicks_i() > 0) delay = expressions.getSingle(event, Timespan.class).getMilliSeconds();
-		Sockets.send(new SkungeePacket(false, SkungeePacketType.BUNGEECOMMAND, expressions.getAll(event, String.class), delay));
+		sockets.send(new SkungeePacket(false, SkungeePacketType.BUNGEECOMMAND, expressions.getAll(event, String.class), delay));
 	}
+
 }

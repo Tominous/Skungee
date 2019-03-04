@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import me.limeglass.skungee.bungeecord.Skungee;
 import me.limeglass.skungee.objects.SkungeePlayer;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import net.md_5.bungee.api.ProxyServer;
@@ -23,7 +22,7 @@ public abstract class SkungeePlayerHandler extends SkungeeHandler {
 		if (packet.getPlayers() != null) {
 			for (SkungeePlayer player : packet.getPlayers()) {
 				ProxiedPlayer proxiedPlayer = null;
-				if (Skungee.getConfig().getBoolean("IncomingUUIDs", true) && player.getUUID() != null) {
+				if (configuration.getBoolean("IncomingUUIDs", true) && player.getUUID() != null) {
 					proxiedPlayer = ProxyServer.getInstance().getPlayer(player.getUUID());
 					if (proxiedPlayer == null) {
 						proxiedPlayer = ProxyServer.getInstance().getPlayer(player.getName()); //invalid UUID

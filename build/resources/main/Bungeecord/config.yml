@@ -2,7 +2,7 @@
 
 # The version is to help determine which version this configuration is.
 # Please do not modify this value, it may result in the configuration resetting!
-version: "1.0.9a"
+version: "1.1.0"
 
 # This is the main port for the Skungee network system. Skungee will setup this port on this Bungeecord machine.
 # Make sure the port is "port forward/open" or that you have access to this port to be running, if not change this to an available port.
@@ -176,7 +176,7 @@ Packets:
     # Should Skungee be allowed to intercept, inject and read packets from the Minecraft clients (players)?
     # If this is false some syntax that rely on packets will not be registered or return nothing.
     # If you have errors with the packets or a developer of Skungee instructed you to, you can do so here.
-    Enabled: true
+    Enabled: false
 
 Misc:
   # Whenever a message isn't set in a syntax, should Skungee grab a funny message to say to the user when kicked.

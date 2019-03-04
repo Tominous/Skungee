@@ -10,8 +10,8 @@ import org.bukkit.entity.Player;
 import com.google.common.base.Optional;
 
 import me.limeglass.skungee.UniversalSkungee;
+import me.limeglass.skungee.bungeecord.Skungee;
 import me.limeglass.skungee.bungeecord.sockets.BungeeSockets;
-import me.limeglass.skungee.bungeecord.sockets.ServerTracker;
 import me.limeglass.skungee.objects.ConnectedServer;
 import me.limeglass.skungee.objects.SkungeePlayer;
 import me.limeglass.skungee.objects.packets.BungeePacket;
@@ -24,11 +24,27 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class SkungeeAPI {
 	
+	private static SkungeeAPI instance;
+	private final boolean bungeecord;
+	private Sockets sockets;
+	
+	private SkungeeAPI(boolean spigot) {
+		bungeecord = !spigot;
+		if (spigot)
+			this.sockets = me.limeglass.skungee.spigot.Skungee.getInstance().getSockets();
+	}
+	
+	public static SkungeeAPI getInstance() {
+		if (instance == null)
+			return new SkungeeAPI(UniversalSkungee.isBungeecord());
+		return instance;
+	}
+	
 	/**
 	 * @return If the current Skungee implementation is from Spigot or Bungeecord.
 	 */
-	public static boolean isBungeecord() {
-		return UniversalSkungee.isBungeecord();
+	public boolean isBungeecord() {
+		return bungeecord;
 	}
 	
 	/**
@@ -37,7 +53,7 @@ public class SkungeeAPI {
 	 * @param players The ProxiedPlayers to be converted to SkungeePlayers.
 	 * @return The SkungeePlayers converted.
 	 */
-	public static SkungeePlayer[] getPlayersFrom(ProxiedPlayer... players) {
+	public SkungeePlayer[] getPlayersFrom(ProxiedPlayer... players) {
 		SkungeePlayer[] skungees = new SkungeePlayer[players.length];
 		for (int i = 0; i < players.length; i++) {
 			ProxiedPlayer player = players[i];
@@ -52,7 +68,7 @@ public class SkungeeAPI {
 	 * @param players The Players to be converted to SkungeePlayers.
 	 * @return The SkungeePlayers converted.
 	 */
-	public static SkungeePlayer[] getPlayersFrom(Player... players) {
+	public SkungeePlayer[] getPlayersFrom(Player... players) {
 		SkungeePlayer[] skungees = new SkungeePlayer[players.length];
 		for (int i = 0; i < players.length; i++) {
 			Player player = players[i];
@@ -69,10 +85,10 @@ public class SkungeeAPI {
 	 * @return Returns a value if the packet's returnable state is set, and Bungeecord returned.
 	 * @throws IllegalAccessException If you attempt to use the packet on the wrong server implementation. Only Spigot.
 	 */
-	public static Object sendPacket(SkungeePacket packet) throws IllegalAccessException {
+	public Object sendPacket(SkungeePacket packet) throws IllegalAccessException {
 		if (isBungeecord())
 			throw new IllegalAccessException("A SkungeePacket may only be sent on a Spigot implementation, try BungeePacket.");
-		return Sockets.send(packet);
+		return sockets.send(packet);
 	}
 	
 	/**
@@ -85,7 +101,7 @@ public class SkungeeAPI {
 	 * @return Returns a value if the packet's returnable state is set, and Bungeecord returned.
 	 * @throws IllegalAccessException If you attempt to use the packet on the wrong server implementation. Only Bungeecord.
 	 */
-	public static Object sendPacket(BungeePacket packet, ConnectedServer... servers) throws IllegalAccessException {
+	public Object sendPacket(BungeePacket packet, ConnectedServer... servers) throws IllegalAccessException {
 		if (!isBungeecord())
 			throw new IllegalAccessException("A BungeePacket may only be sent on a Bungeecord implementation, try SkungeePacket.");
 		return BungeeSockets.send(packet, servers);
@@ -98,8 +114,8 @@ public class SkungeeAPI {
 	 * @param server The input to search for.
 	 * @return The ConnectedServers of which were found by the string input.
 	 */
-	public static Optional<ConnectedServer[]> getConnectedServers(String server) {
-		return Optional.of(ServerTracker.get(server));
+	public Optional<ConnectedServer[]> getConnectedServers(String server) {
+		return Optional.of(Skungee.getInstance().getServerTracker().getServer(server));
 	}
 	
 	/**
@@ -109,7 +125,7 @@ public class SkungeeAPI {
 	 * @return All returned values from each server in a list.
 	 * @throws IllegalAccessException If you attempt to use the packet on the wrong server implementation. Only Bungeecord.
 	 */
-	public static List<Object> sendPacketToAll(BungeePacket packet) throws IllegalAccessException {
+	public List<Object> sendPacketToAll(BungeePacket packet) throws IllegalAccessException {
 		if (!isBungeecord())
 			throw new IllegalAccessException("A BungeePacket may only be sent on a Bungeecord implementation, try SkungeePacket.");
 		return BungeeSockets.sendAll(packet);
@@ -121,7 +137,7 @@ public class SkungeeAPI {
 	 * @param players The Players to be converted to SkungeePlayers.
 	 * @return The SkungeePlayers converted.
 	 */
-	public static SkungeePlayer[] getOnlinePlayersFrom(String... players) {
+	public SkungeePlayer[] getOnlinePlayersFrom(String... players) {
 		return Arrays.stream(players)
 			.map(name -> {
 				if (isBungeecord()) {
@@ -140,10 +156,10 @@ public class SkungeeAPI {
 	 * @return connected servers on from the Skungee Bungeecord side.
 	 * @throws IllegalAccessException If you attempt to use this method on the wrong server implementation. Only Bungeecord.
 	 */
-	public static ConnectedServer[] getConnectedServers() throws IllegalAccessException {
+	public ConnectedServer[] getConnectedServers() throws IllegalAccessException {
 		if (isBungeecord()) 
 			throw new IllegalAccessException("A BungeePacket may only be send on a Spigot implementation, try SkungeePacket.");
-		Set<ConnectedServer> servers = ServerTracker.getAll();
+		Set<ConnectedServer> servers = Skungee.getInstance().getServerTracker().getServers();
 		return servers.toArray(new ConnectedServer[servers.size()]);
 	}
 	
@@ -227,7 +243,7 @@ public class SkungeeAPI {
 		 * @return The PacketBuilder for chaining.
 		 */
 		public SkungeePacketBuilder withPlayers(Player... players) {
-			this.players = SkungeeAPI.getPlayersFrom(players);
+			this.players = instance.getPlayersFrom(players);
 			return this;
 		}
 		
@@ -290,7 +306,7 @@ public class SkungeeAPI {
 		 * @throws IllegalAccessException If you attempt to use this method on the wrong server implementation. Only Spigot.
 		 */
 		public void send() throws IllegalAccessException {
-			SkungeeAPI.sendPacket(build());
+			instance.sendPacket(build());
 		}
 		
 		/**
@@ -358,7 +374,7 @@ public class SkungeeAPI {
 		 * @return The PacketBuilder for chaining.
 		 */
 		public BungeePacketBuilder withPlayers(ProxiedPlayer... players) {
-			this.players = SkungeeAPI.getPlayersFrom(players);
+			this.players = instance.getPlayersFrom(players);
 			return this;
 		}
 		
@@ -421,7 +437,7 @@ public class SkungeeAPI {
 		 * @throws IllegalAccessException If you attempt to use this method on the wrong server implementation. Only Bungeecord.
 		 */
 		public void send(ConnectedServer... servers) throws IllegalAccessException {
-			SkungeeAPI.sendPacket(build(), servers);
+			instance.sendPacket(build(), servers);
 		}
 		
 		/**
@@ -430,7 +446,7 @@ public class SkungeeAPI {
 		 * @throws IllegalAccessException If you attempt to use the packet on the wrong server implementation. Only Bungeecord.
 		 */
 		public void sendToAll() throws IllegalAccessException {
-			SkungeeAPI.sendPacketToAll(build());
+			instance.sendPacketToAll(build());
 		}
 		
 		/**

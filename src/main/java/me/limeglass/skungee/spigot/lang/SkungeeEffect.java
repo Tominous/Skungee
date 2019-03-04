@@ -10,11 +10,19 @@ import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.util.Kleenean;
 import me.limeglass.skungee.spigot.Skungee;
 import me.limeglass.skungee.spigot.Syntax;
+import me.limeglass.skungee.spigot.sockets.Sockets;
 
 public abstract class SkungeeEffect extends Effect implements DataChecker {
 
 	protected ExpressionData expressions;
+	protected final Skungee instance;
+	protected final Sockets sockets;
 	protected int patternMark;
+	
+	public SkungeeEffect() {
+		this.instance = Skungee.getInstance();
+		this.sockets = instance.getSockets();
+	}
 	
 	@Override
 	public boolean init(Expression<?>[] expressions, int matchedPattern, Kleenean isDelayed, ParseResult parser) {

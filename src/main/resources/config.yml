@@ -1,7 +1,7 @@
 # Skungee (Spigot) - The #1 Skript addon for Bungeecord.
 
 # The version is to help determine which version this config is. Please don't modify this value.
-version: "1.0.9a"
+version: "@version@"
 
 # Print additional information in the console. The developers of Skungee may ask you to enable this when reporting an error.
 debug: false
@@ -87,28 +87,46 @@ heartbeat: 50
 # This syntax will wait in an async thread until Skungee connects and this walking down the rest of the trigger. Which is also recommeneded.
 hault: false
 
-# Contantly keep trying to connect to the Skungee on the Bungeecord. This can spam if the Bungeecord is offline for a long period of time.
-# Skungee also makes a bunch of tests before determining if it should shut down when this option is false. So no worries.
-reconnect: true
+# Configurations related to the Socket connection between Spigot and Bungeecord Skungees'
+connection:
+    # The delay is in milliseconds between each connect.
+    delay: 1000
+    # The max amount of times Skungee should try to connect to the Skungee on the Bungeecord.
+    attempts: 20
+    # If Bungeecord Skungee is not found, Skungee will run a small non performance enducing task to constantly keep checking when the Bungeecord comes online.
+    # This option allows to define how long to wait in seconds.
+    keep-alive: 10
+    # The delay in milliseconds between each handshake packet attempt.
+    handshake-delay: 2000
+    # If the connection could not be created should Skungee disable itself?
+    disable: false
 
-# If the Bungeecord server is no where to be found, run a small non performance enducing task to constantly keep checking when the Bungeecord comes online.
-# This option allows to define how long to wait in seconds. Keep in mind that the reconnect option needs to be enabled for this to work.
-keepAlive: 10
-
-# The max amount of times Skungee should try to connect to the Skungee on the Bungeecord.
-maxAttempts: 20
-
-# This is a queue system to make sure every single packet gets sent. This can cause some delay within the Skript calling code, but very minor. This guarentees every packet to be sent.
+# This is a queue system to make sure every single packet gets sent. It will limit the amount of packets sent at a time.
 # Packets that are expressions will not be put into the queued system as it depends on a returned value.
-# So making a queue system for those gets more complex. I might do something about that soon. This will mean that expressions will take priority over effects. Also all effects are sent asynchronous.
-Queue:
+# The queue system will only handle effects unless the `infinite-async-queue` option is enabled.
+queue:
     enabled: true
-    # delay is in milliseconds
+    # Minimum delay between each packet in milliseconds.
     delay: 15
-    # Should Skungee sync and control the queue depending on Expressions aswell.
-    # Expressions are sent directly when they're called. This option makes sure that Effects aren't sent at the same time as Expressions.
-    # If you have hundereds of packets sent within a minute then you might need to set this option to false, as some effects could get backed up.
-    sync: true
+    # If you want to guarentee every packet is set, you can set this to true.
+    # It will throw every packet into a queue system until the connection is reinitiated again.
+    # Keep in mind that it keeps the queue in loaded memory.
+    infinite-async-queue: false
+
+# Reciever, this will allow for some syntax to work. Like "evaluate", "server is online", "global scripts", "network variables" and lots more.
+# This also needs to be enabled in order to run events.
+# Keep in mind that this port must not already be in use. If you run all your servers on the same machine, you will need to make
+# the port option different on each Spigot server. Like 1339, 5670, 25567... etc any port that isn't already in use.
+reciever:
+    enabled: true
+    # The port that the Reciever should run on.
+    port: 1338
+    # Should Skungee automatically determine which port to use that is open?
+    # If this is false it will use the port option above.
+    automatic: true
+    # Define the range that should be scanned for the Automatic port finder.
+    starting-port: 1000
+    max-port: 65534
 
 # Broadcast all the syntax that didn't register to the console.
 NotRegisteredSyntax: false
@@ -157,21 +175,6 @@ SkungeeReturnUUID: true
 # If a syntax returns a number that can be parsed as a timespan, should Skungee convert it into a Timespan?
 # Example: '5 minutes and 27 seconds'
 Timespans: true
-
-# Reciever, this will allow for some syntax to work. Like "evaluate", "server is online", "global scripts" and "network variables".
-# This also needs to be enabled in order to run events below.
-# Keep in mind that this port must not already be in use. If you run all your servers on the same machine, you will need to make
-# the port option different on each Spigot server. Like 1339, 5670, 25567... etc any port that isn't already in use.
-Reciever:
-    enabled: true
-    # The port that the Reciever should run on.
-    port: 1338
-    # Should Skungee automatically determine which port to use that is open?
-    # If this is false it will use the port option above.
-    automatic: true
-    # Define the range that should be scanned for the Automatic port finder.
-    startingPort: 1000
-    maxPort: 65534
   
 # Bungeecord events.
 Events: true

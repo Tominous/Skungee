@@ -28,22 +28,27 @@ import me.limeglass.skungee.objects.packets.SkungeePacket;
 
 public class BungeeRunnable implements Runnable {
 
-	private InetAddress address;
-	private Socket socket;
+	private final Configuration configuration;
+	private final InetAddress address;
+	private final Skungee instance;
+	private final Socket socket;
 
 	public BungeeRunnable(Socket socket) {
+		this.instance = Skungee.getInstance();
+		this.configuration = instance.getConfig();
 		this.address = socket.getInetAddress();
 		this.socket = socket;
 	}
 
 	@Override
 	public void run() {
-		Configuration configuration = Skungee.getConfig();
+		Configuration configuration = Skungee.getInstance().getConfig();
 		if (configuration.getBoolean("security.breaches.enabled", false)) {
 			List<String> addresses = configuration.getStringList("security.breaches.blacklisted");
 			if (!configuration.getBoolean("security.breaches.blacklist-is-whitelist", false)) {
 				if (BungeeSockets.blocked.contains(address) || addresses.contains(address.getHostName())) return;
-			} else if (!addresses.contains(address.getHostName())) return;
+			} else if (!addresses.contains(address.getHostName()))
+				return;
 		}
 		try {
 			String algorithm = configuration.getString("security.encryption.cipherAlgorithm", "AES/CBC/PKCS5Padding");
@@ -65,12 +70,17 @@ public class BungeeRunnable implements Runnable {
 					attempt(address, null);
 					if (configuration.getBoolean("security.debug"))
 						Skungee.exception(e, "Could not decrypt packet " + UniversalSkungee.getPacketDebug(packet));
+					objectInputStream.close();
+					objectOutputStream.close();
 					return;
 				}
 				BungeeReceivedEvent event = new BungeeReceivedEvent(packet, address);
 				ProxyServer.getInstance().getPluginManager().callEvent(event);
-				if (event.isCancelled())
+				if (event.isCancelled()) {
+					objectInputStream.close();
+					objectOutputStream.close();
 					return;
+				}
 				if (packet.getPassword() != null) {
 					if (configuration.getBoolean("security.password.hash", true)) {
 						byte[] password = encryption.hash();
@@ -79,17 +89,23 @@ public class BungeeRunnable implements Runnable {
 						}
 						if (!Arrays.equals(password, packet.getPassword())) {
 							incorrectPassword(packet);
+							objectInputStream.close();
+							objectOutputStream.close();
 							return;
 						}
 					} else {
 						String password = (String) encryption.deserialize(packet.getPassword());
 						if (!password.equals(configuration.getString("security.password.password"))){
 							incorrectPassword(packet);
+							objectInputStream.close();
+							objectOutputStream.close();
 							return;
 						}
 					}
 				} else if (configuration.getBoolean("security.password.enabled", false)) {
 					incorrectPassword(packet);
+					objectInputStream.close();
+					objectOutputStream.close();
 					return;
 				}
 				Optional<SkungeeHandler> handler = SkungeeHandler.getHandler(packet.getType());
@@ -110,6 +126,7 @@ public class BungeeRunnable implements Runnable {
 					BungeeReturningEvent returning = new BungeeReturningEvent(packet, packetData, address);
 					ProxyServer.getInstance().getPluginManager().callEvent(returning);
 					packetData = returning.getObject();
+					Skungee.debugMessage("MADE IT HERE " + packetData.toString());
 					if (configuration.getBoolean("security.encryption.enabled", false)) {
 						byte[] serialized = encryption.serialize(packetData);
 						byte[] encrypted = encryption.encrypt(keyString, algorithm, serialized);
@@ -141,7 +158,7 @@ public class BungeeRunnable implements Runnable {
 	}
 	
 	private void attempt(InetAddress address, @Nullable SkungeePacket packet) {
-		if (Skungee.getConfig().getBoolean("security.breaches.enabled", false)) {
+		if (configuration.getBoolean("security.breaches.enabled", false)) {
 			int attempts = 0;
 			if (BungeeSockets.attempts.containsKey(address)) {
 				attempts = BungeeSockets.attempts.get(address);
@@ -150,15 +167,15 @@ public class BungeeRunnable implements Runnable {
 			attempts++;
 			Skungee.consoleMessage(attempts + "");
 			BungeeSockets.attempts.put(address, attempts);
-			if (attempts >= Skungee.getConfig().getInt("security.breaches.attempts", 30)) {
-				if (Skungee.getConfig().getBoolean("security.breaches.log", false)) {
+			if (attempts >= configuration.getInt("security.breaches.attempts", 30)) {
+				if (configuration.getBoolean("security.breaches.log", false)) {
 					log("", "&cA BungeePacket with an incorrect password has just been recieved and blocked!", "&cThe packet came from: " + socket.getInetAddress());
 					if (packet != null) log("&cThe packet type was: " + packet.getType());
 				}
-				if (Skungee.getConfig().getBoolean("security.breaches.shutdown", false)) {
+				if (configuration.getBoolean("security.breaches.shutdown", false)) {
 					ProxyServer.getInstance().stop();
 				}
-				if (Skungee.getConfig().getBoolean("security.breaches.blockAddress", false)) {
+				if (configuration.getBoolean("security.breaches.blockAddress", false)) {
 					if (!BungeeSockets.blocked.contains(address)) BungeeSockets.blocked.add(address);
 				}
 			}

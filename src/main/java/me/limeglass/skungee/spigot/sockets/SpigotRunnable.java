@@ -7,7 +7,11 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -25,27 +29,35 @@ import me.limeglass.skungee.spigot.Skungee;
 
 public class SpigotRunnable implements Runnable {
 
-	private InetAddress address;
-	private Socket socket;
+	private final Map<InetAddress, Integer> attempts = new HashMap<>();
+	private final Set<InetAddress> blocked = new HashSet<>();
+	private final FileConfiguration configuration;
+	private final InetAddress address;
+	private final Skungee instance;
+	private final Socket socket;
 
 	public SpigotRunnable(Socket socket) {
-		this.socket = socket;
 		this.address = socket.getInetAddress();
+		this.instance = Skungee.getInstance();
+		this.configuration = instance.getConfig();
+		this.socket = socket;
 	}
 
 	@Override
 	public void run() {
-		FileConfiguration configuration = Skungee.getInstance().getConfig();
 		if (configuration.getBoolean("security.breaches.enabled", false)) {
 			List<String> addresses = configuration.getStringList("security.breaches.blacklisted");
-			if (Sockets.blocked.contains(address) || addresses.contains(address.getHostName())) return;
+			if (blocked.contains(address) || addresses.contains(address.getHostName()))
+				return;
 		}
+		String algorithm = configuration.getString("security.encryption.cipherAlgorithm", "AES/CBC/PKCS5Padding");
+		String keyString = configuration.getString("security.encryption.cipherKey", "insert 16 length");
+		EncryptionUtil encryption = instance.getEncrypter();
 		try {
-			String algorithm = configuration.getString("security.encryption.cipherAlgorithm", "AES/CBC/PKCS5Padding");
-			String keyString = configuration.getString("security.encryption.cipherKey", "insert 16 length");
+			if (socket.isClosed())
+				return;
 			ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-			EncryptionUtil encryption = Skungee.getInstance().getEncrypter();
 			Object object = objectInputStream.readObject();
 			if (object != null) {
 				BungeePacket packet = null;
@@ -64,8 +76,11 @@ public class SpigotRunnable implements Runnable {
 				}
 				SkungeeReceivedEvent event = new SkungeeReceivedEvent(packet);
 				Bukkit.getPluginManager().callEvent(event);
-				if (event.isCancelled())
+				if (event.isCancelled()) {
+					objectInputStream.close();
+					objectOutputStream.close();
 					return;
+				}
 				if (packet.getPassword() != null) {
 					if (configuration.getBoolean("security.password.hash", true)) {
 						byte[] password = encryption.hash();
@@ -87,13 +102,16 @@ public class SpigotRunnable implements Runnable {
 					incorrectPassword(packet);
 					return;
 				}
-				if (Sockets.attempts.containsKey(address)) Sockets.attempts.remove(address);
+				if (attempts.containsKey(address)) attempts.remove(address);
 				Object packetData = SpigotPacketHandler.handlePacket(packet, address);
 				if (packetData != null) {
 					SkungeeReturningEvent returning = new SkungeeReturningEvent(packet, packetData);
 					Bukkit.getPluginManager().callEvent(returning);
-					if (returning.isCancelled())
+					if (returning.isCancelled()) {
+						objectInputStream.close();
+						objectOutputStream.close();
 						return;
+					}
 					packetData = returning.getObject();
 					if (configuration.getBoolean("security.encryption.enabled", false)) {
 						byte[] serialized = encryption.serialize(packetData);
@@ -122,30 +140,26 @@ public class SpigotRunnable implements Runnable {
 		Skungee.consoleMessage("&cA BungeePacket with an incorrect password has just been recieved and blocked!");
 		Skungee.consoleMessage("&cThe packet came from: " + socket.getInetAddress());
 		Skungee.consoleMessage("&cThe packet type was: " + packet.getType());
-		//insert more data maybe
 	}
 	
 	private void attempt(InetAddress address, @Nullable BungeePacket packet) {
-		FileConfiguration configuration = Skungee.getInstance().getConfig();
-		if (configuration.getBoolean("security.breaches.enabled", false)) {
-			int attempts = 0;
-			if (Sockets.attempts.containsKey(address)) {
-				attempts = Sockets.attempts.get(address);
-				Sockets.attempts.remove(address, attempts);
+		if (!configuration.getBoolean("security.breaches.enabled", false))
+			return;
+		int i = 0;
+		if (attempts.containsKey(address))
+			i = attempts.get(address);
+		i++;
+		attempts.put(address, i);
+		if (i >= configuration.getInt("security.breaches.attempts", 30)) {
+			if (configuration.getBoolean("security.breaches.log", false)) {
+				log("", "&cA BungeePacket with an incorrect password has just been recieved and blocked!", "&cThe packet came from: " + socket.getInetAddress());
+				if (packet != null) log("&cThe packet type was: " + packet.getType());
 			}
-			attempts++;
-			Sockets.attempts.put(address, attempts);
-			if (attempts >= configuration.getInt("security.breaches.attempts", 30)) {
-				if (configuration.getBoolean("security.breaches.log", false)) {
-					log("", "&cA BungeePacket with an incorrect password has just been recieved and blocked!", "&cThe packet came from: " + socket.getInetAddress());
-					if (packet != null) log("&cThe packet type was: " + packet.getType());
-				}
-				if (configuration.getBoolean("security.breaches.shutdown", false)) {
-					Bukkit.shutdown();
-				}
-				if (configuration.getBoolean("security.breaches.blockAddress", false)) {
-					if (!Sockets.blocked.contains(address)) Sockets.blocked.add(address);
-				}
+			if (configuration.getBoolean("security.breaches.shutdown", false))
+				Bukkit.shutdown();
+			if (configuration.getBoolean("security.breaches.blockAddress", false)) {
+				if (!blocked.contains(address))
+					blocked.add(address);
 			}
 		}
 	}
@@ -153,7 +167,7 @@ public class SpigotRunnable implements Runnable {
 	private void log(String... strings) {
 		try {
 			Logger logger = Logger.getLogger("log");
-			FileHandler handler = new FileHandler(Skungee.getInstance().getDataFolder() + File.separator + "breaches.log");
+			FileHandler handler = new FileHandler(instance.getDataFolder() + File.separator + "breaches.log");
 			handler.setFormatter(new SimpleFormatter());
 			logger.addHandler(handler);
 			for (String string : strings) {

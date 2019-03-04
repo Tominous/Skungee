@@ -5,7 +5,6 @@ import ch.njol.skript.doc.Name;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.lang.SkungeeEffect;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.annotations.Patterns;
 
 import org.bukkit.event.Event;
@@ -17,8 +16,12 @@ public class EffShutdownServer extends SkungeeEffect {
 
 	@Override
 	protected void execute(Event event) {
-		if (isNull(event, String.class)) return;
-		if (isNull(event, Boolean.class)) Sockets.send(new SkungeePacket(false, SkungeePacketType.SHUTDOWNSERVER, expressions.getAll(event, String.class)));
-		else Sockets.send(new SkungeePacket(false, SkungeePacketType.SHUTDOWNSERVER, expressions.getAll(event, String.class), expressions.getSingle(event, Boolean.class)));
+		if (isNull(event, String.class))
+			return;
+		if (isNull(event, Boolean.class))
+			sockets.send(new SkungeePacket(false, SkungeePacketType.SHUTDOWNSERVER, expressions.getAll(event, String.class)));
+		else
+			sockets.send(new SkungeePacket(false, SkungeePacketType.SHUTDOWNSERVER, expressions.getAll(event, String.class), expressions.getSingle(event, Boolean.class)));
 	}
+
 }

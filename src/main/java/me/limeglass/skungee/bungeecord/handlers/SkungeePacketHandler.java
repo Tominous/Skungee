@@ -13,7 +13,6 @@ import me.limeglass.skungee.UniversalSkungee;
 import me.limeglass.skungee.bungeecord.Skungee;
 import me.limeglass.skungee.bungeecord.sockets.BungeeSockets;
 import me.limeglass.skungee.bungeecord.sockets.ServerInstancesSockets;
-import me.limeglass.skungee.bungeecord.sockets.ServerTracker;
 import me.limeglass.skungee.objects.ConnectedServer;
 import me.limeglass.skungee.objects.SkungeeEnums.ChatMode;
 import me.limeglass.skungee.objects.SkungeeEnums.HandSetting;
@@ -47,7 +46,7 @@ public class SkungeePacketHandler {
 		if (packet.getPlayers() != null) {
 			for (SkungeePlayer player : packet.getPlayers()) {
 				ProxiedPlayer proxiedPlayer = null;
-				if (Skungee.getConfig().getBoolean("IncomingUUIDs", true) && player.getUUID() != null) {
+				if (Skungee.getInstance().getConfig().getBoolean("IncomingUUIDs", true) && player.getUUID() != null) {
 					proxiedPlayer = ProxyServer.getInstance().getPlayer(player.getUUID());
 					if (proxiedPlayer == null) { //invalid UUID
 						proxiedPlayer = ProxyServer.getInstance().getPlayer(player.getName());
@@ -62,8 +61,8 @@ public class SkungeePacketHandler {
 			case KICKPLAYERS:
 				String message = "Kicked from the bungeecord network.";
 				if (packet.getObject() != null) message = (String) packet.getObject();
-				else if (Skungee.getConfig().getBoolean("Misc.UseFunnyKickMessages")) {
-					List<String> messages = Skungee.getConfig().getStringList("Misc.FunnyKickMessages");
+				else if (Skungee.getInstance().getConfig().getBoolean("Misc.UseFunnyKickMessages")) {
+					List<String> messages = Skungee.getInstance().getConfig().getStringList("Misc.FunnyKickMessages");
 					Collections.shuffle(messages);
 					message = messages.get(0);
 				}
@@ -75,8 +74,8 @@ public class SkungeePacketHandler {
 				if (!players.isEmpty()) {
 					String msg = "Kicked from the bungeecord network.";
 					if (packet.getObject() != null) msg = (String) packet.getObject();
-					else if (Skungee.getConfig().getBoolean("Misc.UseFunnyKickMessages")) {
-						List<String> messages = Skungee.getConfig().getStringList("Misc.FunnyKickMessages");
+					else if (Skungee.getInstance().getConfig().getBoolean("Misc.UseFunnyKickMessages")) {
+						List<String> messages = Skungee.getInstance().getConfig().getStringList("Misc.FunnyKickMessages");
 						Collections.shuffle(messages);
 						msg = messages.get(0);
 					}
@@ -172,8 +171,8 @@ public class SkungeePacketHandler {
 				if (packet.getObject() != null) {
 					Set<Number> limits = new HashSet<Number>();
 					for (String server : (String[]) packet.getObject()) {
-						for (ConnectedServer serverMax : ServerTracker.get(server)) {
-							if (serverMax != null && ServerTracker.isResponding(serverMax)) {
+						for (ConnectedServer serverMax : Skungee.getInstance().getServerTracker().getServer(server)) {
+							if (serverMax != null && Skungee.getInstance().getServerTracker().isResponding(serverMax)) {
 								limits.add(serverMax.getMaxPlayers());
 							}
 						}
@@ -184,14 +183,14 @@ public class SkungeePacketHandler {
 			case ISSERVERONLINE:
 				if (packet.getObject() != null) {
 					if (packet.getObject() instanceof String) {
-						ConnectedServer[] checkServers = ServerTracker.get((String)packet.getObject());
-						return (checkServers != null && ServerTracker.isResponding(checkServers[0]));
+						ConnectedServer[] checkServers = Skungee.getInstance().getServerTracker().getServer((String)packet.getObject());
+						return (checkServers != null && Skungee.getInstance().getServerTracker().isResponding(checkServers[0]));
 					} else {
 						List<Boolean> list = new ArrayList<Boolean>();
 						String[] array = (String[])packet.getObject();
 						for (int i = 0; i < array.length; i++) {
-							ConnectedServer[] checkServers = ServerTracker.get(array[i]);
-							list.add(checkServers != null && ServerTracker.isResponding(checkServers[0]));
+							ConnectedServer[] checkServers = Skungee.getInstance().getServerTracker().getServer(array[i]);
+							list.add(checkServers != null && Skungee.getInstance().getServerTracker().isResponding(checkServers[0]));
 						}
 						return (list.isEmpty()) ? null : list;
 					}
@@ -201,8 +200,8 @@ public class SkungeePacketHandler {
 				if (packet.getObject() != null) {
 					Set<SkungeePlayer> whitelistedPlayers = new HashSet<SkungeePlayer>();
 					for (String server : (String[]) packet.getObject()) {
-						for (ConnectedServer serverWhitelisted : ServerTracker.get(server)) {
-							if (serverWhitelisted != null && ServerTracker.isResponding(serverWhitelisted)) {
+						for (ConnectedServer serverWhitelisted : Skungee.getInstance().getServerTracker().getServer(server)) {
+							if (serverWhitelisted != null && Skungee.getInstance().getServerTracker().isResponding(serverWhitelisted)) {
 								whitelistedPlayers.addAll(serverWhitelisted.getWhitelistedPlayers());
 							}
 						}
@@ -350,7 +349,7 @@ public class SkungeePacketHandler {
 				if (players.isEmpty()) return false;
 				return (players != null && players.get(0).hasChatColors());
 			case DISCONNECT:
-				if (packet.getObject() != null)	ServerTracker.notResponding(ServerTracker.getByAddress(address, (int)packet.getObject()));
+				if (packet.getObject() != null)	Skungee.getInstance().getServerTracker().notResponding(Skungee.getInstance().getServerTracker().getByAddress(address, (int)packet.getObject()));
 				break;
 			case CREATESERVER:
 				if (packet.getObject() != null && packet.getSetObject() != null) {
@@ -492,7 +491,7 @@ public class SkungeePacketHandler {
 					ServerInstancesSockets.send(unload);
 					BungeePacket shutdown = new BungeePacket(false, BungeePacketType.SHUTDOWN);
 					for (String server : (String[]) packet.getObject()) {
-						BungeeSockets.send(shutdown, ServerTracker.get(server));
+						BungeeSockets.send(shutdown, Skungee.getInstance().getServerTracker().getServer(server));
 					}
 				}
 				break;
@@ -504,8 +503,6 @@ public class SkungeePacketHandler {
 				return RedisBungee.getApi().getServerId();
 			case BUNGEEVERSION:
 				return ProxyServer.getInstance().getVersion();
-			case CURRENTSERVER:
-				return (ServerTracker.getByAddress(address, (int)packet.getObject()) != null) ? ServerTracker.getByAddress(address, (int)packet.getObject()).getName() : null;
 			case DISABLEDCOMMANDS:
 				return ProxyServer.getInstance().getDisabledCommands();
 			case BUNGEENAME:

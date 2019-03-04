@@ -33,7 +33,7 @@ public class BungeeSockets {
 	public static Socket spigot;
 
 	private static Socket getSocketConnection(ConnectedServer server) {
-		for (int i = 0; i < Skungee.getConfig().getInt("Recievers.allowedTrys", 5); i++) {
+		for (int i = 0; i < Skungee.getInstance().getConfig().getInt("Recievers.allowedTrys", 5); i++) {
 			try {
 				return new Socket(server.getAddress(), server.getRecieverPort());
 			} catch (IOException e) {}
@@ -47,12 +47,12 @@ public class BungeeSockets {
 			Skungee.consoleMessage("The server parameter was incorrect or not set while sending bungee " + UniversalSkungee.getPacketDebug(packet));
 			return null;
 		}
-		if (ServerTracker.isResponding(server) && server.hasReciever() && !checking) {
+		if (Skungee.getInstance().getServerTracker().isResponding(server) && server.hasReciever() && !checking) {
 			checking = true;
 			spigot = getSocketConnection(server);
 			if (spigot == null) return null;
 			checking = false;
-			Configuration configuration = Skungee.getConfig();
+			Configuration configuration = Skungee.getInstance().getConfig();
 			EncryptionUtil encryption = Skungee.getEncrypter();
 			String algorithm = configuration.getString("security.encryption.cipherAlgorithm", "AES/CBC/PKCS5Padding");
 			String keyString = configuration.getString("security.encryption.cipherKey", "insert 16 length");
@@ -140,11 +140,16 @@ public class BungeeSockets {
 	}
 	
 	public static List<Object> sendAll(BungeePacket packet) {
-		if (packet.isReturnable()) return ServerTracker.getAll().parallelStream().filter(server -> server.hasReciever()).map(server -> send(server, packet)).collect(Collectors.toList());
+		Set<ConnectedServer> servers = Skungee.getInstance().getServerTracker().getServers();
+		if (packet.isReturnable())
+			return servers.parallelStream()
+					.filter(server -> server.hasReciever())
+					.map(server -> send(server, packet))
+					.collect(Collectors.toList());
 		ProxyServer.getInstance().getScheduler().runAsync(Skungee.getInstance(), new Runnable() {
 			@Override
 			public void run() {
-				Iterator<ConnectedServer> iterator = ServerTracker.getAll().iterator();
+				Iterator<ConnectedServer> iterator = servers.iterator();
 				while (iterator.hasNext()) {
 					ConnectedServer server = iterator.next();
 					if (server.hasReciever()) {

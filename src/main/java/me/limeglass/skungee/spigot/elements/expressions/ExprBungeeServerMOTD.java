@@ -9,7 +9,6 @@ import ch.njol.skript.doc.Name;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.lang.SkungeePropertyExpression;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.annotations.Properties;
 import me.limeglass.skungee.spigot.utils.annotations.PropertiesAddition;
 
@@ -21,9 +20,11 @@ public class ExprBungeeServerMOTD extends SkungeePropertyExpression<String, Stri
 	
 	@Override
 	protected String[] get(Event event, String[] servers) {
-		if (isNull(event)) return null;
+		if (isNull(event))
+			return null;
 		@SuppressWarnings("unchecked")
-		Set<String> motds = (Set<String>) Sockets.send(new SkungeePacket(true, SkungeePacketType.SERVERMOTD, servers));
+		Set<String> motds = (Set<String>) sockets.send(new SkungeePacket(true, SkungeePacketType.SERVERMOTD, servers));
 		return (motds != null) ? motds.toArray(new String[motds.size()]) : null;
 	}
+
 }

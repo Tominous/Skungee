@@ -13,7 +13,6 @@ import me.limeglass.skungee.objects.SkungeePlayer;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.lang.SkungeeExpression;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.annotations.ExpressionProperty;
 import me.limeglass.skungee.spigot.utils.annotations.Patterns;
 
@@ -31,9 +30,11 @@ public class ExprBungeeServerWhitelisted extends SkungeeExpression<Object> imple
 	@Override
 	@Nullable
 	protected Object[] get(Event event) {
-		if (areNull(event) || returnable == null) return null;
+		if (areNull(event) || returnable == null)
+			return null;
 		@SuppressWarnings("unchecked")
-		Set<SkungeePlayer> players = (Set<SkungeePlayer>) Sockets.send(new SkungeePacket(true, SkungeePacketType.WHITELISTED, expressions.getAll(event, String.class)));
+		Set<SkungeePlayer> players = (Set<SkungeePlayer>) sockets.send(new SkungeePacket(true, SkungeePacketType.WHITELISTED, expressions.getAll(event, String.class)));
 		return (players != null) ? convert(players) : null;
 	}
+
 }

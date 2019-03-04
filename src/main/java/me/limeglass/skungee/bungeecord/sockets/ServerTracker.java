@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,59 +23,59 @@ import me.limeglass.skungee.objects.ConnectedServer;
 import me.limeglass.skungee.objects.packets.BungeePacket;
 import me.limeglass.skungee.objects.packets.BungeePacketType;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.config.Configuration;
 
 public class ServerTracker {
 	
-	private static Set<ConnectedServer> notRespondingServers = new HashSet<ConnectedServer>();
-	private static Map<ConnectedServer, Long> tracker = new HashMap<ConnectedServer, Long>();
-	private static Set<ConnectedServer> servers = new HashSet<ConnectedServer>();
+	private final Set<ConnectedServer> notResponding = new HashSet<>();
+	private final Map<ConnectedServer, Long> tracker = new HashMap<>();
+	private final Set<ConnectedServer> servers = new HashSet<>();
+	private final Configuration configuration;
+	private final Skungee instance;
 	
-	public static void tracker() {
-		ProxyServer.getInstance().getScheduler().schedule(Skungee.getInstance(), new Runnable() {
+	public ServerTracker(Skungee instance) {
+		this.instance = instance;
+		this.configuration = instance.getConfig();
+		ProxyServer.getInstance().getScheduler().schedule(instance, new Runnable() {
 			@Override
 			public void run() {
-				if (!servers.isEmpty()) {
-					for (ConnectedServer server : servers) {
-						if (tracker.containsKey(server)) {
-							long trys = Skungee.getConfig().getLong("Tracker.allowedTrys", 4);
-							long lastupdated = tracker.get(server) + (trys * server.getHeartbeat());
-							if (lastupdated < System.currentTimeMillis()) {
-								if (!notRespondingServers.contains(server)) {
-									notResponding(server);
-								}
-							}
-						} else {
-							tracker.put(server, System.currentTimeMillis() + (5 * server.getHeartbeat()));
+				if (servers.isEmpty())
+					return;
+				for (ConnectedServer server : servers) {
+					if (tracker.containsKey(server)) {
+						long trys = configuration.getLong("Tracker.allowedTrys", 4);
+						long lastupdated = tracker.get(server) + (trys * server.getHeartbeat());
+						if (lastupdated < System.currentTimeMillis()) {
+							if (!notResponding.contains(server))
+								notResponding(server);
 						}
+					} else {
+						tracker.put(server, System.currentTimeMillis() + (5 * server.getHeartbeat()));
 					}
 				}
 			}
 		}, 1, 1, TimeUnit.SECONDS);
 	}
 	
-	public static void notResponding(ConnectedServer server) {
-		if (server == null) return;
+	public void notResponding(ConnectedServer server) {
+		if (server == null)
+			return;
 		Skungee.debugMessage("Server " + server.getName() + " has stopped responding!");
-		if (Skungee.getConfig().getBoolean("Tracker.DisableTracking", false)) {
+		if (configuration.getBoolean("Tracker.DisableTracking", false)) {
 			remove(server);
 		} else {
-			notRespondingServers.add(server);
+			notResponding.add(server);
 		}
 	}
 	
-	public static void dump() {
-		tracker.clear();
-		servers.clear();
-		notRespondingServers.clear();
-	}
-	
-	public static Boolean update(String string) {
-		if (get(string) == null) return true;
-		ConnectedServer server = get(string)[0];
+	public boolean update(String string) {
+		if (getServer(string) == null)
+			return true;
+		ConnectedServer server = getServer(string)[0];
 		if (server != null) {
 			tracker.put(server, System.currentTimeMillis());
-			if (notRespondingServers.contains(server)) {
-				notRespondingServers.remove(server);
+			if (notResponding.contains(server)) {
+				notResponding.remove(server);
 				Skungee.debugMessage(server.getName() + " started responding again!");
 			}
 			globalScripts(server);
@@ -84,55 +85,29 @@ public class ServerTracker {
 		}
 	}
 	
-	private static void globalScripts(ConnectedServer server) {
-		if (Skungee.getConfig().getBoolean("GlobalScripts.Enabled", true) && Skungee.getInstance().getScriptsFolder().listFiles().length > 0) {
-			Map<String, List<String>> data = new HashMap<String, List<String>>();
-			String charset = Skungee.getConfig().getString("GlobalScripts.Charset", "default");
-			Charset chars = Charset.defaultCharset();
-			if (!charset.equals("default"))
-				chars = Charset.forName(charset);
-			file : for (File script : Skungee.getInstance().getScriptsFolder().listFiles()) {
-				try {
-					if (script.isDirectory()) {
-						if (script.getName().equalsIgnoreCase(server.getName())) {
-							for (File directory : script.listFiles()) {
-								data.put(directory.getName(), Files.readAllLines(directory.toPath(), chars));
-							}
-						}
-						continue file;
-					}
-					data.put(script.getName(), Files.readAllLines(script.toPath(), chars));
-				} catch (IOException e) {
-					Skungee.infoMessage("Charset " + charset + " does not support some symbols in script " + script.getName());
-					e.printStackTrace();
-				}
-			}
-			BungeeSockets.send(server, new BungeePacket(false, BungeePacketType.GLOBALSCRIPTS, data));
-		}
-	}
-	
-	public static ConnectedServer[] get(String name) {
-		if (isEmpty()) return null;
+	public ConnectedServer[] getServer(String name) {
+		if (servers.isEmpty())
+			return null;
 		for (ConnectedServer server : servers) {
-			if (server.getName().equalsIgnoreCase(name)) {
+			if (server.getName().equalsIgnoreCase(name))
 				return new ConnectedServer[] {server};
-			}
 		}
 		if (name.contains(":")) {
-			Set<ConnectedServer> connectedservers = new HashSet<ConnectedServer>();
-			String[] addresses = (name.contains(",")) ? name.split(",") : new String[]{name};
-			address : for (String address : addresses) {
+			Set<ConnectedServer> connected = new HashSet<>();
+			String[] addresses = (name.contains(",")) ? name.split(",") : new String[] {name};
+			for (String address : addresses) {
 				if (!address.contains(":")) {
-					ConnectedServer possiblyNamed = get(address)[0];
-					if (possiblyNamed == null) connectedservers.add(possiblyNamed);
-					continue address;
+					ConnectedServer possiblyNamed = getServer(address)[0];
+					if (possiblyNamed != null)
+						connected.add(possiblyNamed);
+					continue;
 				}
 				String[] ipPort = address.split(":");
 				try {
 					for (ConnectedServer server : servers) {
 						if (server.getAddress().equals(InetAddress.getByName(ipPort[0]))) {
 							if (server.getPort() == Integer.parseInt(ipPort[1])) {
-								connectedservers.add(server);
+								connected.add(server);
 							}
 						}
 					}
@@ -140,27 +115,31 @@ public class ServerTracker {
 					Skungee.consoleMessage("There was no server found with the address: " + Arrays.toString(ipPort));
 				}
 			}
-			if (connectedservers != null) {
-				return connectedservers.toArray(new ConnectedServer[connectedservers.size()]);
-			}
+			if (!connected.isEmpty())
+				return connected.toArray(new ConnectedServer[connected.size()]);
 		}
 		return null;
 	}
 	
-	public static ConnectedServer getByAddress(InetAddress address, int serverPort) {
-		if (isEmpty()) return null;
+	public ConnectedServer getByAddress(InetAddress address, int port) {
+		if (servers.isEmpty())
+			return null;
 		for (ConnectedServer server : servers) {
-			if (server.getAddress().equals(address) && server.getPort() == serverPort) {
+			if (server.getAddress().equals(address) && server.getPort() == port) {
 				return server;
 			}
 		}
 		return null;
 	}
 	
-	public static ConnectedServer getLocalByPort(int port) {
-		if (isEmpty()) return null;
+	public ConnectedServer getLocalByPort(int port) {
+		if (servers.isEmpty())
+			return null;
 		try {
 			for (ConnectedServer server : servers) {
+				InetAddress address = server.getAddress();
+				if (address.isAnyLocalAddress() || address.isLoopbackAddress())
+					return server;
 				for (Enumeration<NetworkInterface> entry = NetworkInterface.getNetworkInterfaces(); entry.hasMoreElements();) {
 					for (Enumeration<InetAddress> addresses = entry.nextElement().getInetAddresses(); addresses.hasMoreElements();) {
 						if (addresses.nextElement().getHostAddress().equals(server.getAddress().getHostAddress()) && port == server.getPort()) {
@@ -175,39 +154,65 @@ public class ServerTracker {
 		return null;
 	}
 	
-	public static Boolean isEmpty() {
-		return servers.isEmpty();
+	private void globalScripts(ConnectedServer server) {
+		if (!configuration.getBoolean("GlobalScripts.Enabled", true)) 
+			return;
+		File[] files = instance.getScriptsFolder().listFiles();
+		if (files.length <= 0)
+			return;
+		Map<String, List<String>> data = new HashMap<>();
+		String charset = configuration.getString("GlobalScripts.Charset", "default");
+		Charset chars = Charset.defaultCharset();
+		if (!charset.equals("default"))
+			chars = Charset.forName(charset);
+		for (File script : files) {
+			try {
+				if (script.isDirectory()) {
+					if (script.getName().equalsIgnoreCase(server.getName())) {
+						for (File directory : script.listFiles()) {
+							data.put(directory.getName(), Files.readAllLines(directory.toPath(), chars));
+						}
+					}
+					continue;
+				}
+				data.put(script.getName(), Files.readAllLines(script.toPath(), chars));
+			} catch (IOException e) {
+				Skungee.exception(e, "Charset " + charset + " does not support some symbols in script " + script.getName());
+			}
+		}
+		BungeeSockets.send(server, new BungeePacket(false, BungeePacketType.GLOBALSCRIPTS, data));
 	}
 	
-	public static Set<ConnectedServer> getAll() {
+	public Set<ConnectedServer> getServers() {
 		return servers;
 	}
 	
-	public static Boolean contains(ConnectedServer server) {
+	public Boolean contains(ConnectedServer server) {
 		return servers.contains(server);
 	}
 	
-	public static Boolean isResponding(ConnectedServer server) {
-		return !notRespondingServers.contains(server);
+	public Boolean isResponding(ConnectedServer server) {
+		return !notResponding.contains(server);
 	}
 
-	public static void add(ConnectedServer server) {
-		Set<ConnectedServer> toRemove = new HashSet<ConnectedServer>();
-		for (ConnectedServer connected : servers) {
-			if (connected.getAddress().equals(server.getAddress()) && connected.getPort().equals(server.getPort())) {
-				toRemove.add(connected);
-			}
-		}
-		for (ConnectedServer connected : toRemove) {
-			remove(connected);
+	public void add(ConnectedServer server) {
+		Iterator<ConnectedServer> iterator = servers.iterator();
+		while (iterator.hasNext()) {
+			ConnectedServer connected = iterator.next();
+			if (!connected.getAddress().equals(server.getAddress()))
+				continue;
+			if (connected.getPort() != server.getPort())
+				continue;
+			iterator.remove();
 		}
 		servers.add(server);
 		Skungee.consoleMessage("Connected to server " + server.getName() + " with port " + server.getPort());
 	}
 	
-	public static void remove(ConnectedServer server) {
+	public void remove(ConnectedServer server) {
+		notResponding.remove(server);
 		tracker.remove(server);
-		notRespondingServers.remove(server);
 		servers.remove(server);
 	}
+
 }

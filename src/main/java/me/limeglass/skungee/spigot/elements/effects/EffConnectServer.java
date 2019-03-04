@@ -7,7 +7,6 @@ import me.limeglass.skungee.objects.SkungeePlayer;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.lang.SkungeeEffect;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.Utils;
 import me.limeglass.skungee.spigot.utils.annotations.Patterns;
 import me.limeglass.skungee.spigot.utils.annotations.RegisterEnum;
@@ -28,7 +27,7 @@ public class EffConnectServer extends SkungeeEffect {
 		ConnectReason reason = ConnectReason.PLUGIN;
 		if (!isNull(event, 2))
 			reason = (ConnectReason)expressions.get(2).getSingle(event);
-		Sockets.send(new SkungeePacket(false, SkungeePacketType.CONNECTPLAYER, expressions.get(1).getSingle(event), reason.name(), players));
+		sockets.send(new SkungeePacket(false, SkungeePacketType.CONNECTPLAYER, expressions.get(1).getSingle(event), reason.name(), players));
 	}
 
 }

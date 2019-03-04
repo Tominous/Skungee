@@ -28,92 +28,84 @@ public class EncryptionUtil {
 
 	private me.limeglass.skungee.bungeecord.Skungee bungeeInstance;
 	private String algorithm = "AES/CTS/PKCS5Padding";
-	private Boolean spigot, printErrors;
+	private boolean spigot, printErrors;
 	private Skungee spigotInstance;
 	
-	public EncryptionUtil(me.limeglass.skungee.bungeecord.Skungee skungee, Boolean spigot) {
-		this.bungeeInstance = skungee;
-		this.spigot = spigot;
-		if (spigot) {
-			algorithm = Skungee.getInstance().getConfig().getString("security.encryption.cipherAlgorithm", "AES/CTS/PKCS5Padding");
-			printErrors = Skungee.getInstance().getConfig().getBoolean("security.encryption.printEncryptionErrors", true);
-		} else {
-			algorithm = me.limeglass.skungee.bungeecord.Skungee.getConfig().getString("security.encryption.cipherAlgorithm", "AES/CTS/PKCS5Padding");
-			printErrors = me.limeglass.skungee.bungeecord.Skungee.getConfig().getBoolean("security.encryption.printEncryptionErrors", true);
-		}
+	public EncryptionUtil(me.limeglass.skungee.bungeecord.Skungee instance) {
+		this.algorithm = instance.getConfig().getString("security.encryption.cipherAlgorithm", "AES/CTS/PKCS5Padding");
+		this.printErrors = instance.getConfig().getBoolean("security.encryption.printEncryptionErrors", true);
+		this.bungeeInstance = instance;
+		this.spigot = false;
 	}
 	
-	public EncryptionUtil(Skungee skungee, Boolean spigot) {
-		this.spigotInstance = skungee;
-		this.spigot = spigot;
-		if (spigot) {
-			algorithm = Skungee.getInstance().getConfig().getString("security.encryption.cipherAlgorithm", "AES/CTS/PKCS5Padding");
-			printErrors = Skungee.getInstance().getConfig().getBoolean("security.encryption.printEncryptionErrors", true);
-		} else {
-			algorithm = me.limeglass.skungee.bungeecord.Skungee.getConfig().getString("security.encryption.cipherAlgorithm", "AES/CTS/PKCS5Padding");
-			printErrors = me.limeglass.skungee.bungeecord.Skungee.getConfig().getBoolean("security.encryption.printEncryptionErrors", true);
-		}
+	public EncryptionUtil(Skungee instance) {
+		this.algorithm = instance.getConfig().getString("security.encryption.cipherAlgorithm", "AES/CTS/PKCS5Padding");
+		this.printErrors = instance.getConfig().getBoolean("security.encryption.printEncryptionErrors", true);
+		this.spigotInstance = instance;
+		this.spigot = true;
 	}
 	
 	public final void hashFile() {
 		if (spigot) {
-			if (Skungee.getInstance().getConfig().getBoolean("security.password.enabled", false) && Skungee.getInstance().getConfig().getBoolean("security.password.hash", true)
-			&& Skungee.getInstance().getConfig().getBoolean("security.password.hashFile", false) && !Skungee.getInstance().getConfig().getString("security.password.password").equals("hashed")) {
-				try {
-					File hashedFile = new File(Skungee.getInstance().getDataFolder(), "hashed.txt");
-					if (!hashedFile.exists()) hashedFile.createNewFile();
-					else hashedFile.delete();
-					FileOutputStream out = new FileOutputStream(hashedFile);
-					out.write(hash());
-					out.close();
-					Skungee.consoleMessage("You're now safe to set the `password` option to \"hashed\"");
-				} catch (IOException e) {
-					exception(e, "There was an error writting the hash to file.");
-				}
+			if (!spigotInstance.getConfig().getBoolean("security.password.enabled", false))
+				return;
+			if (!spigotInstance.getConfig().getBoolean("security.password.hashFile", false))
+				return;
+			if (!spigotInstance.getConfig().getString("security.password.password", "").equalsIgnoreCase("hashed"))
+				return;
+			try {
+				File file = new File(spigotInstance.getDataFolder(), "hashed.txt");
+				if (!file.exists())
+					file.createNewFile();
+				else
+					file.delete();
+				FileOutputStream out = new FileOutputStream(file);
+				out.write(hash());
+				out.close();
+				Skungee.consoleMessage("You're now safe to set the `password` option to \"hashed\"");
+			} catch (IOException e) {
+				exception(e, "There was an error writting the hash to file.");
 			}
-			if (isFileHashed()) {
+			if (isFileHashed())
 				Skungee.infoMessage("Password is successfully hashed to file!");
-			}
 		} else {
-			if (me.limeglass.skungee.bungeecord.Skungee.getConfig().getBoolean("security.password.enabled", false) && me.limeglass.skungee.bungeecord.Skungee.getConfig().getBoolean("security.password.hash", true)
-			&& me.limeglass.skungee.bungeecord.Skungee.getConfig().getBoolean("security.password.hashFile", false) && !me.limeglass.skungee.bungeecord.Skungee.getConfig().getString("security.password.password").equals("hashed")) {
-				try {
-					File hashedFile = new File(me.limeglass.skungee.bungeecord.Skungee.getInstance().getDataFolder(), "hashed.txt");
-					if (!hashedFile.exists()) hashedFile.createNewFile();
-					else hashedFile.delete();
-					FileOutputStream out = new FileOutputStream(hashedFile);
-					out.write(hash());
-					out.close();
-					me.limeglass.skungee.bungeecord.Skungee.consoleMessage("You're now safe to set the `password` option to \"hashed\"");
-				} catch (IOException e) {
-					exception(e, "There was an error writting the hash to file.");
-				}
+			if (!bungeeInstance.getConfig().getBoolean("security.password.enabled", false))
+				return;
+			if (!bungeeInstance.getConfig().getBoolean("security.password.hashFile", false))
+				return;
+			if (!bungeeInstance.getConfig().getString("security.password.password", "").equalsIgnoreCase("hashed"))
+				return;
+			try {
+				File file = new File(bungeeInstance.getDataFolder(), "hashed.txt");
+				if (!file.exists())
+					file.createNewFile();
+				else
+					file.delete();
+				FileOutputStream out = new FileOutputStream(file);
+				out.write(hash());
+				out.close();
+				me.limeglass.skungee.bungeecord.Skungee.consoleMessage("You're now safe to set the `password` option to \"hashed\"");
+			} catch (IOException e) {
+				exception(e, "There was an error writting the hash to file.");
 			}
-			if (isFileHashed()) {
+			if (isFileHashed())
 				me.limeglass.skungee.bungeecord.Skungee.infoMessage("Password is successfully hashed to file!");
-			}
 		}
 	}
 	
-	public final Boolean isFileHashed() {
-		if (spigot) {
-			return (Skungee.getInstance().getConfig().getBoolean("security.password.enabled", false) && Skungee.getInstance().getConfig().getBoolean("security.password.hash", true)
-			&& Skungee.getInstance().getConfig().getBoolean("security.password.hashFile", false) && Skungee.getInstance().getConfig().getString("security.password.password").equals("hashed") && getHashFromFile() != null);
-		} else {
-			return (me.limeglass.skungee.bungeecord.Skungee.getConfig().getBoolean("security.password.enabled", false) && me.limeglass.skungee.bungeecord.Skungee.getConfig().getBoolean("security.password.hash", true)
-			&& me.limeglass.skungee.bungeecord.Skungee.getConfig().getBoolean("security.password.hashFile", false) && me.limeglass.skungee.bungeecord.Skungee.getConfig().getString("security.password.password").equals("hashed") && getHashFromFile() != null);
-		}
+	public final boolean isFileHashed() {
+		return getHashFromFile() != null;
 	}
 	
 	public final byte[] getHashFromFile() {
-		File hashedFile;
+		File file;
 		if (spigot) {
-			hashedFile = new File(Skungee.getInstance().getDataFolder(), "hashed.txt");
+			file = new File(Skungee.getInstance().getDataFolder(), "hashed.txt");
 		} else {
-			hashedFile = new File(me.limeglass.skungee.bungeecord.Skungee.getInstance().getDataFolder(), "hashed.txt");
+			file = new File(me.limeglass.skungee.bungeecord.Skungee.getInstance().getDataFolder(), "hashed.txt");
 		}
 		try {
-			return Files.readAllBytes(hashedFile.toPath());
+			return Files.readAllBytes(file.toPath());
 		} catch (IOException e) {
 			exception(e, "There was an error reading the hash from file.");
 		}
@@ -130,8 +122,8 @@ public class EncryptionUtil {
 			}
 		} else {
 			try {
-				byte[] base64 = Base64.getEncoder().encode(me.limeglass.skungee.bungeecord.Skungee.getConfig().getString("security.password.password").getBytes(StandardCharsets.UTF_8));
-				return MessageDigest.getInstance(me.limeglass.skungee.bungeecord.Skungee.getConfig().getString("security.password.hashAlgorithm", "SHA-256")).digest(base64);
+				byte[] base64 = Base64.getEncoder().encode(bungeeInstance.getConfig().getString("security.password.password").getBytes(StandardCharsets.UTF_8));
+				return MessageDigest.getInstance(bungeeInstance.getConfig().getString("security.password.hashAlgorithm", "SHA-256")).digest(base64);
 			} catch (NoSuchAlgorithmException e) {
 				exception(e, "The algorithm `" + algorithm + "` does not exist for your system. Please use a different algorithm.");
 			}

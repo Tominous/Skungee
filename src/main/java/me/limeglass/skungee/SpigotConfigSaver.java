@@ -22,8 +22,8 @@ public class SpigotConfigSaver {
 		this.folder = new File(instance.getDataFolder(), "old-configs/");
 		this.config = new File(instance.getDataFolder(), "config.yml");
 		load();
-		this.oldconfig = new File(folder, configuration.getString("version", "old") + "-config.yml");
 		if (!folder.exists()) folder.mkdir();
+		this.oldconfig = new File(folder, configuration.getString("version", "old") + "-config.yml");
 	}
 	
 	private void load() {

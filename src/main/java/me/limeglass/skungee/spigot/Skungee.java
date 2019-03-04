@@ -2,6 +2,7 @@ package me.limeglass.skungee.spigot;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,7 +26,6 @@ import me.limeglass.skungee.SpigotConfigSaver;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.elements.Register;
-import me.limeglass.skungee.spigot.sockets.PacketQueue;
 import me.limeglass.skungee.spigot.sockets.Reciever;
 import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.ReflectionUtil;
@@ -36,28 +36,26 @@ public class Skungee extends JavaPlugin {
 	
 	//Spigot
 	
-	private static Map<String, FileConfiguration> files = new HashMap<String, FileConfiguration>();
-	private String packageName = "me.limeglass.skungee.spigot";
-	private static String prefix = "&8[&cSkungee&8] &e";
-	private static String nameplate = "[Skungee] ";
+	private final Map<String, FileConfiguration> files = new HashMap<>();
+	private final String packageName = "me.limeglass.skungee.spigot";
+	private final static String prefix = "&8[&cSkungee&8] &e";
+	private final static String nameplate = "[Skungee] ";
 	private EncryptionUtil encryption;
 	private static Skungee instance;
-	private static boolean skript;
 	private SkriptAddon addon;
+	private Reciever reciever;
 	private Metrics metrics;
+	private Sockets sockets;
+	private boolean skript;
 	
-	public void onEnable(){
-		Plugin plugin = Bukkit.getPluginManager().getPlugin("Skript");
-		if (plugin != null && plugin.isEnabled()) {
-			skript = true;
-			addon = Skript.registerAddon(this).setLanguageFileDirectory("lang");
-		}
+	public void onEnable() {
 		instance = this;
 		saveDefaultConfig();
 		File config = new File(getDataFolder(), "config.yml");
 		if (!getDescription().getVersion().equals(getConfig().getString("version"))) {
 			consoleMessage("&dNew update found! Updating files now...");
-			if (config.exists()) new SpigotConfigSaver(this).execute();
+			if (config.exists())
+				new SpigotConfigSaver(this).execute();
 		}
 		for (String name : Arrays.asList("config", "syntax")) { //replace config with future files here
 			File file = new File(getDataFolder(), name + ".yml");
@@ -73,25 +71,28 @@ public class Skungee extends JavaPlugin {
 			}
 			files.put(name, configuration);
 		}
-		encryption = new EncryptionUtil(this, true);
+		encryption = new EncryptionUtil(this);
 		encryption.hashFile();
-		if (getConfig().getBoolean("Queue.enabled", true)) {
-			PacketQueue.start();
+		if (getConfig().getBoolean("Reciever.enabled", false)) {
+			this.reciever = new Reciever(this);
+			getServer().getScheduler().runTaskLater(instance, () -> this.sockets = new Sockets(this), 5);
+		} else {
+			this.sockets = new Sockets(this);
+		}
+		Plugin plugin = Bukkit.getPluginManager().getPlugin("Skript");
+		if (plugin != null && plugin.isEnabled()) {
+			skript = true;
+			addon = Skript.registerAddon(this).setLanguageFileDirectory("lang");
 		}
 		metrics = new Metrics(this);
-		Register.metrics(metrics);
-		if (getConfig().getBoolean("Reciever.enabled", false)) {
-			Reciever.setupReciever();
-		} else {
-			Sockets.connect();
-		}
-		if (!getConfig().getBoolean("DisableRegisteredInfo", false)) Bukkit.getLogger().info(nameplate + "has been enabled!");
+		Register.metrics(metrics); //statically registers everything. TODO clean.
+		if (!getConfig().getBoolean("DisableRegisteredInfo", false))
+			Bukkit.getLogger().info(nameplate + "has been enabled!");
 	}
 	
 	public void onDisable() {
-		Sockets.send(new SkungeePacket(true, SkungeePacketType.DISCONNECT, Bukkit.getPort()));
-		PacketQueue.stop();
-		Sockets.onPluginDisabling();
+		sockets.send(new SkungeePacket(true, SkungeePacketType.DISCONNECT, Bukkit.getPort()));
+		sockets.disconnect();
 		getServer().getScheduler().cancelTasks(this);
 	}
 
@@ -166,8 +167,32 @@ public class Skungee extends JavaPlugin {
 		return instance;
 	}
 	
-	public static boolean isSkriptPresent() {
+	public boolean isSkriptPresent() {
 		return skript;
+	}
+	
+	public Metrics getMetrics() {
+		return metrics;
+	}
+	
+	public Sockets getSockets() {
+		return sockets;
+	}
+	
+	public ServerSocket getReciever() {
+		return reciever.getReciever();
+	}
+	
+	public String getPackageName() {
+		return packageName;
+	}
+	
+	public static String getPrefix() {
+		return prefix;
+	}
+	
+	public static String getNameplate() {
+		return nameplate;
 	}
 	
 	public EncryptionUtil getEncrypter() {
@@ -176,22 +201,6 @@ public class Skungee extends JavaPlugin {
 	
 	public SkriptAddon getAddonInstance() {
 		return addon;
-	}
-	
-	public Metrics getMetrics() {
-		return metrics;
-	}
-	
-	public String getPackageName() {
-		return packageName;
-	}
-	
-	public static String getNameplate() {
-		return nameplate;
-	}
-	
-	public static String getPrefix() {
-		return prefix;
 	}
 	
 	//Grabs a FileConfiguration of a defined name. The name can't contain .yml in it.
@@ -233,9 +242,5 @@ public class Skungee extends JavaPlugin {
 			Bukkit.getLogger().info("");
 		}
 	}
+
 }
-/*
-
-
-
-*/

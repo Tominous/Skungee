@@ -10,7 +10,6 @@ import me.limeglass.skungee.objects.SkungeeEnums.SkriptChangeMode;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.lang.SkungeePropertyExpression;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.Utils;
 import me.limeglass.skungee.spigot.utils.annotations.Changers;
 import me.limeglass.skungee.spigot.utils.annotations.Properties;
@@ -25,16 +24,19 @@ public class ExprBungeePlayerReconnectServer extends SkungeePropertyExpression<O
 
 	@Override
 	protected String[] get(Event event, Object[] skungeePlayers) {
-		if (isNull(event)) return null;
+		if (isNull(event))
+			return null;
 		@SuppressWarnings("unchecked")
-		Set<String> servers = (Set<String>) Sockets.send(new SkungeePacket(true, SkungeePacketType.PLAYERRECONNECTSERVER, Utils.toSkungeePlayers(skungeePlayers)));
+		Set<String> servers = (Set<String>) sockets.send(new SkungeePacket(true, SkungeePacketType.PLAYERRECONNECTSERVER, Utils.toSkungeePlayers(skungeePlayers)));
 		return (servers != null) ? servers.toArray(new String[servers.size()]) : null;
 	}
 	
 	@Override
 	public void change(Event event, Object[] delta, ChangeMode mode) {
 		SkriptChangeMode changer = Utils.getEnum(SkriptChangeMode.class, mode.toString());
-		if (isNull(event) || delta == null || changer == null) return;
-		Sockets.send(new SkungeePacket(false, SkungeePacketType.PLAYERRECONNECTSERVER, (String) delta[0], null, changer, Utils.toSkungeePlayers(getExpr().getAll(event))));
+		if (isNull(event) || delta == null || changer == null)
+			return;
+		sockets.send(new SkungeePacket(false, SkungeePacketType.PLAYERRECONNECTSERVER, (String) delta[0], null, changer, Utils.toSkungeePlayers(getExpr().getAll(event))));
 	}
+
 }

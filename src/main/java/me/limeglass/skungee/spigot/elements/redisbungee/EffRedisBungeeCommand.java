@@ -5,7 +5,6 @@ import ch.njol.skript.doc.Name;
 import me.limeglass.skungee.objects.packets.SkungeePacket;
 import me.limeglass.skungee.objects.packets.SkungeePacketType;
 import me.limeglass.skungee.spigot.lang.SkungeeEffect;
-import me.limeglass.skungee.spigot.sockets.Sockets;
 import me.limeglass.skungee.spigot.utils.annotations.Patterns;
 
 import org.bukkit.event.Event;
@@ -20,6 +19,7 @@ public class EffRedisBungeeCommand extends SkungeeEffect {
 		if (isNull(event, 0)) return;
 		String[] servers = null;
 		if (!isNull(event, 1)) servers = expressions.getAll(event, String.class, 1);
-		Sockets.send(new SkungeePacket(false, SkungeePacketType.REDISPROXYCOMMAND, expressions.get(0).getAll(event), servers));
+		sockets.send(new SkungeePacket(false, SkungeePacketType.REDISPROXYCOMMAND, expressions.get(0).getAll(event), servers));
 	}
+
 }

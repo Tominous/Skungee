@@ -15,7 +15,8 @@ public class PlayerServerHandler extends SkungeePlayerHandler {
 
 	@Override
 	public Object handlePacket(SkungeePacket packet, InetAddress address) {
-		if (packet.getObject() == null) return null;
+		if (packet.getObject() == null)
+			return null;
 		return players.parallelStream().map(player -> player.getServer().getInfo().getName()).collect(Collectors.toSet());
 	}
 	
