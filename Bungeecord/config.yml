@@ -15,7 +15,7 @@ version: "@version@"
 port: 1337
 
 # Prints additional information in the console. The developers of Skungee may ask you to enable this when reporting an error.
-debug: false
+debug: true
 
 # Ignores the packets that spam such as GLOBALSCRIPTS and HEARTBEAT in the debug.
 # Developers of Skungee may notify you to disable this option when reporting an error.
@@ -25,7 +25,7 @@ IgnoreSpamPackets: true
 # Everything in this section must match the same values as the Skungee config.yml on the Spigot servers.
 security:
     # Debug option for security, a Skungee developer may ask you to enable this.
-    debug: false
+    debug: true
     # All strings get decoded in UTF_8, some symbols may not apply.
     password:
         # Should all packets require a password in order to be processed.
@@ -48,7 +48,7 @@ security:
         hashAlgorithm: "SHA-256"
     encryption:
         # Should Skungee encrypt all sent packets.
-        enabled: false
+        enabled: true
         # Set which Cipher algorithm you would like to use.
         cipherAlgorithm: "AES/CBC/PKCS5Padding"
         # The cipher key is like another password.
@@ -61,7 +61,7 @@ security:
         # Breaches are even more added security, Breaches require the password or encryption option to be enabled for this to work.
         # Breaches is a system designed to stop constant failed attempts. Since there is no threshold for how many packets can be sent a tick, this option aims to add
         # security for that. If a(n) IP/Server fails X amount of times, what should Skungee do to protect your server. Choose from the options below.
-        enabled: false
+        enabled: true
         # The amount of times a(n) IP/Server can fail at successfully sending security details.
         attempts: 30
         # Should Skungee shutdown the server if there is such an issue of security breaching?
@@ -176,7 +176,7 @@ Packets:
     # Should Skungee be allowed to intercept, inject and read packets from the Minecraft clients (players)?
     # If this is false some syntax that rely on packets will not be registered or return nothing.
     # If you have errors with the packets or a developer of Skungee instructed you to, you can do so here.
-    Enabled: false
+    Enabled: true
 
 Misc:
   # Whenever a message isn't set in a syntax, should Skungee grab a funny message to say to the user when kicked.
